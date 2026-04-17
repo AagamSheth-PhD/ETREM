@@ -1,3 +1,5 @@
+// --- ETREM main.js – Complete Working Version ---
+
 document.addEventListener("DOMContentLoaded", () => {
     // --- 1. CONFIGURATION & SENSITIVE DATA ---
 
@@ -11,18 +13,24 @@ document.addEventListener("DOMContentLoaded", () => {
         databaseURL: "https://etrem-a3c78-default-rtdb.asia-southeast1.firebasedatabase.app"
     };
 
-    const RAZORPAY_KEY_ID = "YOUR_RAZORPAY_KEY_HERE"; 
+    const RAZORPAY_KEY_ID = "YOUR_RAZORPAY_KEY_HERE";
     const EMAILJS_SERVICE_ID = "YOUR_EMAILJS_SERVICE_ID_HERE";
     const EMAILJS_TEMPLATE_ID = "YOUR_EMAILJS_TEMPLATE_ID_HERE";
     const EMAILJS_PUBLIC_KEY = "YOUR_EMAILJS_PUBLIC_KEY_HERE";
 
     // Initialize Firebase
     let auth, db;
-try {
-    firebase.initializeApp(firebaseConfig);
-    auth = firebase.auth();
-    db = firebase.database();
-} catch (error) { 
+    try {
+        if (typeof firebase !== 'undefined') {
+            firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            if (typeof firebase.database === 'function') {
+                db = firebase.database();
+            }
+        } else {
+            console.warn("Firebase SDK not loaded. Auth and database features will be unavailable.");
+        }
+    } catch (error) {
         console.error("Firebase initialization failed:", error);
     }
 
@@ -40,7 +48,7 @@ try {
             { id: 'the-genesis-50', name: 'The Genesis', price: 399, mrp: 599, images: ['19.webp', '20.webp', '21.webp'], category: 'individual-50ml', gender: 'Unisex', family: ['Fruity', 'Gourmand'], bestFor: 'Daily wear, versatile day-to-night', notes: 'Ripe Fruits, Creamy Vanilla, Musk' },
             { id: 'the-murk-50', name: 'The Murk', price: 399, mrp: 599, images: ['22.webp', '23.webp', '24.webp'], category: 'individual-50ml', gender: 'Unisex', family: ['Gourmand', 'Oriental'], bestFor: 'Intimate evenings, all seasons', notes: 'Cinnamon, Pear, Jasmine, Coffee, Bourbon Vanilla' },
             { id: 'the-reign-50', name: 'The Reign', price: 399, mrp: 599, images: ['25.webp', '26.webp', '27.webp'], category: 'individual-50ml', gender: 'Unisex', family: ['Aquatic', 'Woody'], bestFor: 'Day-to-night, versatile and sophisticated', notes: 'Sea Water, Herbal Mint, Sandalwood, Musk' },
-            
+
             // Individuals 20ml
             { id: 'the-poem-20', name: 'The Poem', price: 199, mrp: 299, images: ['28.webp', '29.webp', '3.webp'], category: 'individual-20ml', gender: 'Feminine', family: ['Aromatic', 'Oriental'] },
             { id: 'the-expanse-20', name: 'The Expanse', price: 199, mrp: 299, images: ['30.webp', '31.webp', '6.webp'], category: 'individual-20ml', gender: 'Masculine', family: ['Aquatic', 'Fresh'] },
@@ -69,26 +77,423 @@ try {
         wishlistItems: [],
         currentUser: null,
 
-        // --- CORE INITIALIZATION ---
-renderSharedComponents() {
-            // Add your header/footer/nav render logic here
+        // --- UTILITY: Get product page URL from product ID ---
+        getProductPageUrl(productId) {
+            // Map product IDs to their actual HTML page filenames
+            const idToPage = {
+                'the-poem-50': 'product-the-poem.html',
+                'the-poem-20': 'product-the-poem.html',
+                'the-expanse-50': 'product-the-expanse.html',
+                'the-expanse-20': 'product-the-expanse.html',
+                'the-forge-50': 'product-the-forge.html',
+                'the-forge-20': 'product-the-forge.html',
+                'the-muse-50': 'product-the-muse.html',
+                'the-muse-20': 'product-the-muse.html',
+                'the-affair-50': 'product-the-affair.html',
+                'the-affair-20': 'product-the-affair.html',
+                'the-warden-50': 'product-the-warden.html',
+                'the-warden-20': 'product-the-warden.html',
+                'the-genesis-50': 'product-the-genesis.html',
+                'the-genesis-20': 'product-the-genesis.html',
+                'the-murk-50': 'product-the-murk.html',
+                'the-murk-20': 'product-the-murk.html',
+                'the-reign-50': 'product-the-reign.html',
+                'the-reign-20': 'product-the-reign.html',
+                'trial-him': 'product-trial-him.html',
+                'trial-her': 'product-trial-her.html',
+                'trial-unisex': 'product-trial-unisex.html',
+                'trial-all': 'product-trial-all.html',
+                'combo-him-20ml': 'product-combo-him-20ml.html',
+                'combo-her-20ml': 'product-combo-her-20ml.html',
+                'combo-unisex-20ml': 'product-combo-unisex-20ml.html',
+                'combo-her-50ml': 'product-combo-her-50ml.html',
+                'combo-him-50ml': 'product-combo-him-50ml.html',
+            };
+            return idToPage[productId] || 'shop.html';
         },
 
+        // --- UTILITY: Show Toast Notification ---
+        showToast(message, type = 'success') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            // Trigger animation
+            requestAnimationFrame(() => {
+                toast.classList.add('show');
+            });
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        },
+
+        // --- 3. RENDER HEADER & FOOTER ---
+        renderSharedComponents() {
+            // ---- HEADER ----
+            const header = document.querySelector('header.header');
+            if (header) {
+                header.innerHTML = `
+                    <nav class="navbar">
+                        <a href="./index.html" class="navbar-logo">
+                            <img src="./images/etrem.webp" alt="ETREM – The Naked Perfume" onerror="this.onerror=null; this.src='./images/etrem.jpg';">
+                        </a>
+                        <ul class="nav-menu">
+                            <li><a href="./index.html" class="nav-link">Home</a></li>
+                            <li><a href="./shop.html" class="nav-link">Shop</a></li>
+                            <li><a href="./about.html" class="nav-link">About</a></li>
+                            <li><a href="./quiz.html" class="nav-link">Find Your Scent</a></li>
+                            <li><a href="./blog.html" class="nav-link">Blog</a></li>
+                            <li><a href="./contact.html" class="nav-link">Contact</a></li>
+                        </ul>
+                        <div class="nav-actions">
+                            <button class="nav-action-btn" id="search-icon" aria-label="Search">
+                                <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                            </button>
+                            <a href="./wishlist.html" class="nav-action-btn" aria-label="Wishlist">
+                                <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                            </a>
+                            <a href="./cart.html" class="nav-action-btn" aria-label="Cart">
+                                <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1.003 1.003 0 0 0 20 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                                <span class="cart-item-count">0</span>
+                            </a>
+                            <a href="#" class="nav-action-btn" id="user-icon" aria-label="Account">
+                                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                            </a>
+                            <button class="hamburger" id="hamburger-btn" aria-label="Menu">
+                                <span></span><span></span><span></span>
+                            </button>
+                        </div>
+                    </nav>
+                `;
+
+                // Hamburger menu toggle
+                const hamburger = document.getElementById('hamburger-btn');
+                const navMenu = document.querySelector('.nav-menu');
+                if (hamburger && navMenu) {
+                    hamburger.addEventListener('click', () => {
+                        navMenu.classList.toggle('active');
+                        hamburger.classList.toggle('active');
+                    });
+                    // Close menu on link click
+                    navMenu.querySelectorAll('.nav-link').forEach(link => {
+                        link.addEventListener('click', () => {
+                            navMenu.classList.remove('active');
+                            hamburger.classList.remove('active');
+                        });
+                    });
+                }
+
+                // Search icon
+                const searchIcon = document.getElementById('search-icon');
+                const searchOverlay = document.getElementById('search-overlay');
+                if (searchIcon && searchOverlay) {
+                    searchIcon.addEventListener('click', () => searchOverlay.classList.add('active'));
+                    const closeSearch = document.getElementById('close-search');
+                    if (closeSearch) {
+                        closeSearch.addEventListener('click', () => searchOverlay.classList.remove('active'));
+                    }
+                    const searchInput = document.getElementById('search-input');
+                    if (searchInput) {
+                        searchInput.addEventListener('input', (e) => this.search.performSearch(e.target.value));
+                    }
+                }
+
+                // User icon
+                const userIcon = document.getElementById('user-icon');
+                if (userIcon) {
+                    userIcon.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        if (this.currentUser) {
+                            window.location.href = './profile.html';
+                        } else {
+                            window.location.href = './login.html';
+                        }
+                    });
+                }
+
+                // Highlight active nav link
+                const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    const href = link.getAttribute('href').replace('./', '');
+                    if (href === currentPage) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+
+            // ---- FOOTER ----
+            const footer = document.querySelector('footer');
+            if (footer) {
+                footer.className = 'footer';
+                footer.innerHTML = `
+                    <div class="container">
+                        <div class="footer-grid">
+                            <div class="footer-col">
+                                <h4>Quick Links</h4>
+                                <ul>
+                                    <li><a href="./shop.html">Shop All</a></li>
+                                    <li><a href="./about.html">About ETREM</a></li>
+                                    <li><a href="./blog.html">Blog</a></li>
+                                    <li><a href="./contact.html">Contact Us</a></li>
+                                </ul>
+                            </div>
+                            <div class="footer-col">
+                                <h4>Customer Care</h4>
+                                <ul>
+                                    <li><a href="./shipping-returns.html">Shipping & Returns</a></li>
+                                    <li><a href="./privacy-policy.html">Privacy Policy</a></li>
+                                </ul>
+                            </div>
+                            <div class="footer-col">
+                                <h4>Get In Touch</h4>
+                                <ul>
+                                    <li><a href="mailto:hello@etrem.in">hello@etrem.in</a></li>
+                                    <li><a href="https://www.instagram.com/etrem.in" target="_blank">Instagram</a></li>
+                                </ul>
+                            </div>
+                            <div class="footer-col">
+                                <h4>ETREM</h4>
+                                <p style="color: var(--text-muted);">India's raw, honest luxury perfume brand. No gimmicks. Just scent. #Lastsforever</p>
+                            </div>
+                        </div>
+                        <div class="footer-bottom">
+                            <p>&copy; ${new Date().getFullYear()} ETREM – The Naked Perfume. All rights reserved.</p>
+                            <p id="dev-credit">Crafted with ♥ in India</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Ensure toast container exists
+            if (!document.getElementById('toast-container')) {
+                const tc = document.createElement('div');
+                tc.id = 'toast-container';
+                document.body.appendChild(tc);
+            }
+        },
+
+        // --- 4. HOME PAGE ---
         initHomePage() {
-            // Add your hero slider and home page logic here
+            // ---- Hero Slider ----
+            const slides = document.querySelectorAll('.hero-slider .slide');
+            const dotsContainer = document.querySelector('.slider-dots');
+            const prevBtn = document.querySelector('.slider-arrow.prev');
+            const nextBtn = document.querySelector('.slider-arrow.next');
+
+            if (slides.length > 0) {
+                let currentSlide = 0;
+                let slideInterval;
+
+                // Create dots
+                if (dotsContainer) {
+                    slides.forEach((_, i) => {
+                        const dot = document.createElement('span');
+                        dot.className = `dot ${i === 0 ? 'active' : ''}`;
+                        dot.addEventListener('click', () => goToSlide(i));
+                        dotsContainer.appendChild(dot);
+                    });
+                }
+
+                function goToSlide(index) {
+                    slides[currentSlide].classList.remove('active');
+                    const dots = document.querySelectorAll('.slider-dots .dot');
+                    if (dots[currentSlide]) dots[currentSlide].classList.remove('active');
+
+                    currentSlide = (index + slides.length) % slides.length;
+
+                    slides[currentSlide].classList.add('active');
+                    if (dots[currentSlide]) dots[currentSlide].classList.add('active');
+                }
+
+                function nextSlide() {
+                    goToSlide(currentSlide + 1);
+                }
+
+                function prevSlide() {
+                    goToSlide(currentSlide - 1);
+                }
+
+                function startAutoSlide() {
+                    slideInterval = setInterval(nextSlide, 5000);
+                }
+
+                function stopAutoSlide() {
+                    clearInterval(slideInterval);
+                }
+
+                if (nextBtn) nextBtn.addEventListener('click', () => { stopAutoSlide(); nextSlide(); startAutoSlide(); });
+                if (prevBtn) prevBtn.addEventListener('click', () => { stopAutoSlide(); prevSlide(); startAutoSlide(); });
+
+                startAutoSlide();
+            }
+
+            // ---- Featured / Best Seller Products ----
+            const featuredGrid = document.getElementById('featured-products');
+            if (featuredGrid) {
+                const bestSellers = this.products.filter(p => p.bestSeller);
+                featuredGrid.innerHTML = bestSellers.map(p => this.shop.createProductCardHTML(p)).join('');
+
+                // Add event listeners for the rendered cards
+                this._attachProductCardListeners(featuredGrid);
+            }
+        },
+
+        // --- 5. PRODUCT DETAIL PAGE ---
+        initProductPage() {
+            const page = document.querySelector('.product-detail-page');
+            if (!page) return;
+
+            // Thumbnail image switching
+            const mainImage = document.getElementById('mainProductImage');
+            const thumbnails = document.querySelectorAll('.thumb-img');
+            thumbnails.forEach(thumb => {
+                thumb.addEventListener('click', () => {
+                    thumbnails.forEach(t => t.classList.remove('active'));
+                    thumb.classList.add('active');
+                    if (mainImage) {
+                        mainImage.src = thumb.dataset.mainSrc || thumb.src;
+                    }
+                });
+            });
+
+            // Volume selector
+            const volumeBtns = document.querySelectorAll('.volume-btn');
+            volumeBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    volumeBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    const price = btn.dataset.price;
+                    const mrp = btn.dataset.mrp;
+                    const images = btn.dataset.images ? btn.dataset.images.split(',') : [];
+
+                    const priceEl = document.getElementById('productPrice');
+                    const mrpEl = document.getElementById('originalPrice');
+                    const savingsEl = document.getElementById('savingsLabel');
+
+                    if (priceEl) priceEl.textContent = `₹${price}`;
+                    if (mrpEl) mrpEl.textContent = `₹${mrp}`;
+                    if (savingsEl && mrp > price) {
+                        const savings = Math.round((1 - price / mrp) * 100);
+                        savingsEl.textContent = `You save ${savings}%`;
+                    }
+
+                    // Update images
+                    if (images.length > 0 && mainImage) {
+                        mainImage.src = `./images/${images[0]}`;
+                        thumbnails.forEach((thumb, i) => {
+                            if (images[i]) {
+                                thumb.src = `./images/${images[i]}`;
+                                thumb.dataset.mainSrc = `./images/${images[i]}`;
+                            }
+                        });
+                        if (thumbnails[0]) {
+                            thumbnails.forEach(t => t.classList.remove('active'));
+                            thumbnails[0].classList.add('active');
+                        }
+                    }
+                });
+            });
+
+            // Quantity selector
+            const qtyInput = document.getElementById('quantity');
+            const decreaseBtn = document.getElementById('decrease-qty');
+            const increaseBtn = document.getElementById('increase-qty');
+
+            if (decreaseBtn && qtyInput) {
+                decreaseBtn.addEventListener('click', () => {
+                    let val = parseInt(qtyInput.value) || 1;
+                    if (val > 1) qtyInput.value = val - 1;
+                });
+            }
+            if (increaseBtn && qtyInput) {
+                increaseBtn.addEventListener('click', () => {
+                    let val = parseInt(qtyInput.value) || 1;
+                    if (val < 10) qtyInput.value = val + 1;
+                });
+            }
+
+            // Add to Cart from PDP
+            const addToCartPDP = document.querySelector('.add-to-cart-pdp');
+            if (addToCartPDP) {
+                addToCartPDP.addEventListener('click', () => {
+                    const productData = page.dataset.productId; // e.g., "the-affair"
+                    const activeVolume = document.querySelector('.volume-btn.active');
+                    const volume = activeVolume ? activeVolume.dataset.volume : '50ml';
+                    const volumeSuffix = volume === '20ml' ? '-20' : '-50';
+                    const productId = productData + volumeSuffix;
+                    const quantity = parseInt(qtyInput ? qtyInput.value : 1);
+
+                    this.cartManager.add(productId, quantity);
+                });
+            }
+
+            // Wishlist from PDP
+            const wishlistBtnPDP = page.querySelector('.wishlist-btn');
+            if (wishlistBtnPDP) {
+                wishlistBtnPDP.addEventListener('click', () => {
+                    const productData = page.dataset.productId;
+                    const activeVolume = document.querySelector('.volume-btn.active');
+                    const volume = activeVolume ? activeVolume.dataset.volume : '50ml';
+                    const volumeSuffix = volume === '20ml' ? '-20' : '-50';
+                    const productId = productData + volumeSuffix;
+                    this.wishlist.toggle(productId);
+                });
+            }
+
+            // Accordion
+            document.querySelectorAll('.accordion-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const content = header.nextElementSibling;
+                    const icon = header.querySelector('.accordion-icon');
+                    const isOpen = content.style.maxHeight;
+
+                    // Close all
+                    document.querySelectorAll('.accordion-content').forEach(c => c.style.maxHeight = null);
+                    document.querySelectorAll('.accordion-icon').forEach(i => i.textContent = '+');
+
+                    if (!isOpen) {
+                        content.style.maxHeight = content.scrollHeight + 'px';
+                        if (icon) icon.textContent = '−';
+                    }
+                });
+            });
+
+            // Share button
+            const shareBtn = page.querySelector('.share-btn');
+            if (shareBtn) {
+                shareBtn.addEventListener('click', () => {
+                    if (navigator.share) {
+                        navigator.share({ title: document.title, url: window.location.href });
+                    } else {
+                        navigator.clipboard.writeText(window.location.href).then(() => {
+                            this.showToast('Link copied to clipboard!');
+                        });
+                    }
+                });
+            }
         },
 
         initShopPage() {
             this.shop.initShopPage();
         },
 
+        // --- CORE INITIALIZATION ---
         init() {
             this.cart = JSON.parse(localStorage.getItem('etremCart')) || [];
             this.renderSharedComponents();
-            this.auth.init(); // This will also trigger UI updates after checking auth state
+            this.auth.init();
 
             // Page-specific initializers
-            const page = document.body.className;
             if (document.querySelector('.hero-slider-section')) this.initHomePage();
             if (document.querySelector('.shop-page')) this.initShopPage();
             if (document.querySelector('.product-detail-page')) this.initProductPage();
@@ -97,17 +502,150 @@ renderSharedComponents() {
             if (document.querySelector('.cart-page')) this.cartManager.initCartPage();
             if (document.querySelector('.checkout-page')) this.checkout.initCheckoutPage();
             if (document.querySelector('.quiz-page')) this.quiz.init();
-            
+
             this.cartManager.updateCartCount();
         },
 
-        // [PASTE THIS CODE INSIDE THE 'app' OBJECT]
+        // --- Helper: attach click listeners to product cards ---
+        _attachProductCardListeners(container) {
+            if (!container) return;
+
+            // Add to Cart buttons
+            container.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const productId = btn.dataset.productId;
+                    this.cartManager.add(productId);
+                });
+            });
+
+            // Wishlist buttons
+            container.querySelectorAll('.wishlist-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const productId = btn.dataset.productId;
+                    this.wishlist.toggle(productId);
+                });
+            });
+        },
+
+        // --- 5. AUTH MODULE ---
+        auth: {
+            init() {
+                if (typeof firebase === 'undefined' || !firebase.auth) return;
+                try {
+                    firebase.auth().onAuthStateChanged((user) => {
+                        app.currentUser = user;
+                        app.auth.updateUI(user);
+                        if (user) {
+                            app.wishlist.fetchWishlist();
+                        } else {
+                            app.wishlist.clearWishlist();
+                        }
+                    });
+                } catch (error) {
+                    console.warn("Auth state listener failed:", error);
+                }
+            },
+
+            updateUI(user) {
+                const userIcon = document.getElementById('user-icon');
+                if (userIcon) {
+                    if (user) {
+                        userIcon.title = `Logged in as ${user.displayName || user.email}`;
+                    } else {
+                        userIcon.title = 'Login / Sign Up';
+                    }
+                }
+                // Profile page
+                const profileName = document.getElementById('profile-name');
+                const profileEmail = document.getElementById('profile-email');
+                if (profileName && user) profileName.textContent = user.displayName || 'User';
+                if (profileEmail && user) profileEmail.textContent = user.email;
+            },
+
+            initAuthPage() {
+                const loginForm = document.getElementById('login-form');
+                const signupForm = document.getElementById('signup-form');
+                const showSignup = document.getElementById('show-signup');
+                const showLogin = document.getElementById('show-login');
+                const googleBtn = document.getElementById('google-signin-btn');
+                const loginWrapper = document.getElementById('login-wrapper');
+                const signupWrapper = document.getElementById('signup-wrapper');
+
+                if (showSignup) {
+                    showSignup.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        if (loginWrapper) loginWrapper.style.display = 'none';
+                        if (signupWrapper) signupWrapper.style.display = 'block';
+                    });
+                }
+
+                if (showLogin) {
+                    showLogin.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        if (signupWrapper) signupWrapper.style.display = 'none';
+                        if (loginWrapper) loginWrapper.style.display = 'block';
+                    });
+                }
+
+                if (loginForm) {
+                    loginForm.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        const email = document.getElementById('login-email').value;
+                        const password = document.getElementById('login-password').value;
+                        const errorEl = document.getElementById('login-error');
+                        try {
+                            await firebase.auth().signInWithEmailAndPassword(email, password);
+                            app.showToast('Login successful!');
+                            setTimeout(() => window.location.href = './index.html', 1000);
+                        } catch (err) {
+                            if (errorEl) errorEl.textContent = err.message;
+                        }
+                    });
+                }
+
+                if (signupForm) {
+                    signupForm.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        const name = document.getElementById('signup-name').value;
+                        const email = document.getElementById('signup-email').value;
+                        const password = document.getElementById('signup-password').value;
+                        const errorEl = document.getElementById('signup-error');
+                        try {
+                            const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+                            await cred.user.updateProfile({ displayName: name });
+                            app.showToast('Account created successfully!');
+                            setTimeout(() => window.location.href = './index.html', 1000);
+                        } catch (err) {
+                            if (errorEl) errorEl.textContent = err.message;
+                        }
+                    });
+                }
+
+                if (googleBtn) {
+                    googleBtn.addEventListener('click', async () => {
+                        try {
+                            const provider = new firebase.auth.GoogleAuthProvider();
+                            await firebase.auth().signInWithPopup(provider);
+                            app.showToast('Logged in with Google!');
+                            setTimeout(() => window.location.href = './index.html', 1000);
+                        } catch (err) {
+                            console.error('Google sign-in error:', err);
+                            app.showToast(err.message, 'error');
+                        }
+                    });
+                }
+            }
+        },
 
         // --- 6. SHOP PAGE MODULE ---
         shop: {
             filters: { gender: [], family: [], price: null, category: 'all' },
             sortBy: 'newest',
-            
+
             initShopPage() {
                 const urlParams = new URLSearchParams(window.location.search);
                 const category = urlParams.get('category');
@@ -129,7 +667,8 @@ renderSharedComponents() {
                     return;
                 }
                 grid.innerHTML = productsToRender.map(p => this.createProductCardHTML(p)).join('');
-                app.wishlist.updateAllHeartIcons(); // Update hearts after rendering
+                app.wishlist.updateAllHeartIcons();
+                app._attachProductCardListeners(grid);
             },
 
             applyFiltersAndSort() {
@@ -152,7 +691,7 @@ renderSharedComponents() {
 
                 // Price Filter
                 if (this.filters.price) {
-                    const [min, max] = this.filters.price.split('-').map(Number);
+                    const [min, max] = this.filters.price.split('-').map(v => v === 'Infinity' ? Infinity : Number(v));
                     filtered = filtered.filter(p => p.price >= min && p.price <= (max || Infinity));
                 }
 
@@ -169,20 +708,78 @@ renderSharedComponents() {
                         break;
                     case 'newest':
                     default:
-                        // Assuming order in array is newest first
                         break;
                 }
-                
+
                 this.renderProducts(filtered);
             },
 
             addEventListeners() {
-                // ... Event listeners for shop filters, sorting, and tabs
+                // Category tabs
+                document.querySelectorAll('.cat-tab').forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        this.filters.category = tab.dataset.category;
+                        this.applyFiltersAndSort();
+                    });
+                });
+
+                // Gender checkboxes
+                document.querySelectorAll('input[name="gender"]').forEach(cb => {
+                    cb.addEventListener('change', () => {
+                        this.filters.gender = [...document.querySelectorAll('input[name="gender"]:checked')].map(c => c.value);
+                        this.applyFiltersAndSort();
+                    });
+                });
+
+                // Family checkboxes
+                document.querySelectorAll('input[name="family"]').forEach(cb => {
+                    cb.addEventListener('change', () => {
+                        this.filters.family = [...document.querySelectorAll('input[name="family"]:checked')].map(c => c.value);
+                        this.applyFiltersAndSort();
+                    });
+                });
+
+                // Price radio buttons
+                document.querySelectorAll('input[name="price"]').forEach(rb => {
+                    rb.addEventListener('change', () => {
+                        this.filters.price = rb.value;
+                        this.applyFiltersAndSort();
+                    });
+                });
+
+                // Sort dropdown
+                const sortSelect = document.getElementById('sort-by');
+                if (sortSelect) {
+                    sortSelect.addEventListener('change', () => {
+                        this.sortBy = sortSelect.value;
+                        this.applyFiltersAndSort();
+                    });
+                }
+
+                // Clear filters
+                const clearBtn = document.getElementById('clear-filters');
+                if (clearBtn) {
+                    clearBtn.addEventListener('click', () => {
+                        this.filters = { gender: [], family: [], price: null, category: 'all' };
+                        this.sortBy = 'newest';
+                        document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+                        const allTab = document.querySelector('.cat-tab[data-category="all"]');
+                        if (allTab) allTab.classList.add('active');
+                        document.querySelectorAll('.filter-sidebar input').forEach(inp => {
+                            inp.checked = false;
+                        });
+                        const sortSel = document.getElementById('sort-by');
+                        if (sortSel) sortSel.value = 'newest';
+                        this.applyFiltersAndSort();
+                    });
+                }
             },
 
             createProductCardHTML(product) {
                 const isWishlisted = app.wishlist.includes(product.id);
-                const pageUrl = `product-${product.id.split('-')[1]}.html`; // simplified url generation
+                const pageUrl = app.getProductPageUrl(product.id);
                 return `
                     <div class="product-card" data-id="${product.id}">
                         <div class="product-card-image">
@@ -215,19 +812,20 @@ renderSharedComponents() {
 
             initWishlistPage() {
                 if (!app.currentUser) {
-                    document.getElementById('wishlist-content').innerHTML = `<p>Please <a href="./login.html">login</a> to see your wishlist.</p>`;
+                    const wc = document.getElementById('wishlist-content');
+                    if (wc) wc.innerHTML = `<p>Please <a href="./login.html">login</a> to see your wishlist.</p>`;
                     return;
                 }
                 this.renderWishlistPage();
             },
 
             async fetchWishlist() {
-                if (!app.currentUser) return;
+                if (!app.currentUser || !db) return;
                 try {
-                    const snapshot = await firebase.database().ref(`wishlists/${app.currentUser.uid}`).once('value');
+                    const snapshot = await db.ref(`wishlists/${app.currentUser.uid}`).once('value');
                     this.items = snapshot.val() ? Object.keys(snapshot.val()) : [];
                     this.updateAllHeartIcons();
-                    if (document.body.classList.contains('wishlist-page')) {
+                    if (document.querySelector('.wishlist-page')) {
                         this.renderWishlistPage();
                     }
                 } catch (error) {
@@ -246,17 +844,26 @@ renderSharedComponents() {
                     window.location.href = './login.html';
                     return;
                 }
-                const wishlistRef = firebase.database().ref(`wishlists/${app.currentUser.uid}/${productId}`);
-                if (this.items.includes(productId)) {
-                    await wishlistRef.remove();
-                    this.items = this.items.filter(id => id !== productId);
-                    app.showToast("Removed from wishlist");
-                } else {
-                    await wishlistRef.set(true);
-                    this.items.push(productId);
-                    app.showToast("Added to wishlist");
+                if (!db) {
+                    app.showToast("Database not available", "error");
+                    return;
                 }
-                this.updateHeartIcon(productId);
+                try {
+                    const wishlistRef = db.ref(`wishlists/${app.currentUser.uid}/${productId}`);
+                    if (this.items.includes(productId)) {
+                        await wishlistRef.remove();
+                        this.items = this.items.filter(id => id !== productId);
+                        app.showToast("Removed from wishlist");
+                    } else {
+                        await wishlistRef.set(true);
+                        this.items.push(productId);
+                        app.showToast("Added to wishlist");
+                    }
+                    this.updateHeartIcon(productId);
+                } catch (error) {
+                    console.error("Wishlist toggle error:", error);
+                    app.showToast("Error updating wishlist", "error");
+                }
             },
 
             includes(productId) {
@@ -272,19 +879,21 @@ renderSharedComponents() {
             },
 
             updateAllHeartIcons() {
-                document.querySelectorAll('.wishlist-btn').forEach(btn => {
+                document.querySelectorAll('.wishlist-btn[data-product-id]').forEach(btn => {
                     this.updateHeartIcon(btn.dataset.productId);
                 });
             },
 
             renderWishlistPage() {
                 const grid = document.getElementById('wishlist-content');
+                if (!grid) return;
                 if (this.items.length === 0) {
                     grid.innerHTML = `<p>Your wishlist is empty. Start exploring!</p>`;
                     return;
                 }
                 const wishlistedProducts = app.products.filter(p => this.items.includes(p.id));
-                grid.innerHTML = wishlistedProducts.map(p => app.shop.createProductCardHTML(p)).join('');
+                grid.innerHTML = '<div class="product-grid">' + wishlistedProducts.map(p => app.shop.createProductCardHTML(p)).join('') + '</div>';
+                app._attachProductCardListeners(grid);
             }
         },
 
@@ -296,7 +905,10 @@ renderSharedComponents() {
 
             add(productId, quantity = 1) {
                 const product = app.products.find(p => p.id === productId);
-                if (!product) return;
+                if (!product) {
+                    console.warn("Product not found:", productId);
+                    return;
+                }
 
                 const existingItem = app.cart.find(item => item.id === productId);
                 if (existingItem) {
@@ -325,6 +937,7 @@ renderSharedComponents() {
                 app.cart = app.cart.filter(item => item.id !== productId);
                 this.save();
                 this.renderCartPage();
+                app.showToast('Item removed from cart');
             },
 
             save() {
@@ -357,12 +970,12 @@ renderSharedComponents() {
                                 <p>₹${product.price}</p>
                             </div>
                             <div class="cart-item-controls">
-                                <button class="qty-btn" onclick="app.cartManager.update('${product.id}', ${item.quantity - 1})">−</button>
+                                <button class="qty-btn" data-action="decrease" data-id="${product.id}" data-qty="${item.quantity - 1}">−</button>
                                 <span>${item.quantity}</span>
-                                <button class="qty-btn" onclick="app.cartManager.update('${product.id}', ${item.quantity + 1})">+</button>
+                                <button class="qty-btn" data-action="increase" data-id="${product.id}" data-qty="${item.quantity + 1}">+</button>
                             </div>
                             <p class="cart-item-total">₹${product.price * item.quantity}</p>
-                            <button class="remove-btn" onclick="app.cartManager.remove('${product.id}')">✕</button>
+                            <button class="remove-btn" data-id="${product.id}">✕</button>
                         </div>
                     `;
                 }).join('');
@@ -380,54 +993,94 @@ renderSharedComponents() {
                         <a href="./checkout.html" class="btn btn-primary">Proceed to Checkout</a>
                     </div>
                 `;
+
+                // Attach listeners (replaces inline onclick)
+                cartContent.querySelectorAll('.qty-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        app.cartManager.update(btn.dataset.id, parseInt(btn.dataset.qty));
+                    });
+                });
+                cartContent.querySelectorAll('.remove-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        app.cartManager.remove(btn.dataset.id);
+                    });
+                });
             }
         },
 
         // --- 9. CHECKOUT MODULE ---
         checkout: {
             initCheckoutPage() {
-                // ... Logic to populate checkout summary from cart
+                const summary = document.getElementById('checkout-summary');
+                if (!summary) return;
+
+                if (app.cart.length === 0) {
+                    summary.innerHTML = `<p>Your cart is empty. <a href="./shop.html">Continue Shopping</a></p>`;
+                    return;
+                }
+
+                let total = 0;
+                const items = app.cart.map(item => {
+                    const product = app.products.find(p => p.id === item.id);
+                    if (!product) return '';
+                    const subtotal = product.price * item.quantity;
+                    total += subtotal;
+                    return `
+                        <div class="checkout-item">
+                            <span>${product.name} × ${item.quantity}</span>
+                            <span>₹${subtotal}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                summary.innerHTML = `
+                    <div class="checkout-items">${items}</div>
+                    <div class="checkout-total">
+                        <strong>Total: ₹${total}</strong>
+                    </div>
+                `;
+
+                // Checkout form submission
+                const checkoutForm = document.getElementById('checkout-form');
+                if (checkoutForm) {
+                    checkoutForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        app.showToast('Order placed successfully! 🎉');
+                        app.cart = [];
+                        app.cartManager.save();
+                        setTimeout(() => window.location.href = './index.html', 2000);
+                    });
+                }
             },
-            
+
             placeOrder() {
-                // ... Logic to validate form, create order object
-                // ... Call Razorpay or save as COD
+                // Placeholder for Razorpay / COD integration
             }
         },
 
         // --- 10. SEARCH MODULE ---
         search: {
-            init() {
-                const searchIcon = document.getElementById('search-icon');
-                const searchOverlay = document.getElementById('search-overlay');
-                const closeSearch = document.getElementById('close-search');
-                const searchInput = document.getElementById('search-input');
-
-                searchIcon.addEventListener('click', () => searchOverlay.classList.add('active'));
-                closeSearch.addEventListener('click', () => searchOverlay.classList.remove('active'));
-                searchInput.addEventListener('input', (e) => this.performSearch(e.target.value));
-            },
-
             performSearch(query) {
                 const resultsContainer = document.getElementById('search-results');
+                if (!resultsContainer) return;
                 if (query.length < 2) {
                     resultsContainer.innerHTML = '';
                     return;
                 }
                 const lowerQuery = query.toLowerCase();
-                const results = app.products.filter(p => 
+                const results = app.products.filter(p =>
                     p.name.toLowerCase().includes(lowerQuery) ||
                     (p.family && p.family.join(' ').toLowerCase().includes(lowerQuery)) ||
                     (p.notes && p.notes.toLowerCase().includes(lowerQuery))
-                ).slice(0, 5); // Limit to 5 results
+                ).slice(0, 5);
 
-                resultsContainer.innerHTML = results.length ? 
+                resultsContainer.innerHTML = results.length ?
                     results.map(p => this.createSearchResultHTML(p)).join('') :
                     '<p>No results found.</p>';
             },
 
             createSearchResultHTML(product) {
-                 const pageUrl = `product-${product.id.split('-')[1]}.html`; // simplified
+                const pageUrl = app.getProductPageUrl(product.id);
                 return `
                     <a href="${pageUrl}" class="search-result-item">
                         <img src="./images/${product.images[0]}" alt="${product.name}">
@@ -443,24 +1096,58 @@ renderSharedComponents() {
         // --- 11. QUIZ MODULE ---
         quiz: {
             answers: {},
+            currentQuestion: 0,
             questions: [
                 { id: 1, text: "1. What's your ideal vibe for an evening out?", options: { woody: "Confident & Commanding", oriental: "Mysterious & Seductive", fresh: "Effortless & Casual", gourmand: "Playful & Sweet" }},
                 { id: 2, text: "2. Pick a setting that calls to you:", options: { fresh: "A breezy beach house", woody: "A crackling fireplace in a cabin", gourmand: "A bustling Parisian bakery", floral: "A sun-drenched secret garden" }},
                 { id: 3, text: "3. Choose a drink:", options: { oriental: "Spiced old fashioned", gourmand: "Rich hot chocolate", fresh: "Classic gin & tonic", woody: "Aged single malt" }},
                 { id: 4, text: "4. Your preferred style is:", options: { woody: "Timeless & classic", floral: "Elegant & chic", fresh: "Minimalist & clean", oriental: "Bold & expressive" }}
             ],
-            
+
             init() {
-                // ... Full quiz logic to show questions and calculate result
+                const quizContainer = document.getElementById('quiz-container');
+                if (!quizContainer) return;
+
+                this.currentQuestion = 0;
+                this.answers = {};
+                this.renderQuestion(quizContainer);
             },
-            
-            calculateResult() {
+
+            renderQuestion(container) {
+                if (this.currentQuestion >= this.questions.length) {
+                    this.calculateResult(container);
+                    return;
+                }
+
+                const q = this.questions[this.currentQuestion];
+                const optionsHTML = Object.entries(q.options).map(([key, text]) => `
+                    <button class="quiz-option btn btn-secondary" data-value="${key}">${text}</button>
+                `).join('');
+
+                container.innerHTML = `
+                    <div class="quiz-question">
+                        <div class="quiz-progress">Question ${this.currentQuestion + 1} of ${this.questions.length}</div>
+                        <h3>${q.text}</h3>
+                        <div class="quiz-options">${optionsHTML}</div>
+                    </div>
+                `;
+
+                container.querySelectorAll('.quiz-option').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        this.answers[q.id] = btn.dataset.value;
+                        this.currentQuestion++;
+                        this.renderQuestion(container);
+                    });
+                });
+            },
+
+            calculateResult(container) {
                 const scores = {};
                 for (const answer of Object.values(this.answers)) {
                     scores[answer] = (scores[answer] || 0) + 1;
                 }
                 const topChoice = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
-                
+
                 const recommendations = {
                     woody: 'the-warden-50',
                     oriental: 'the-affair-50',
@@ -468,16 +1155,41 @@ renderSharedComponents() {
                     gourmand: 'the-murk-50',
                     floral: 'the-muse-50'
                 };
-                
-                const resultId = recommendations[topChoice] || 'the-genesis-50'; // Default
-                this.showResult(resultId);
+
+                const resultId = recommendations[topChoice] || 'the-genesis-50';
+                this.showResult(resultId, container);
             },
-            
-            showResult(productId) {
-                // ... Logic to hide quiz and show the result product card
+
+            showResult(productId, container) {
+                const product = app.products.find(p => p.id === productId);
+                if (!product || !container) return;
+                const pageUrl = app.getProductPageUrl(productId);
+
+                container.innerHTML = `
+                    <div class="quiz-result">
+                        <h2>Your Perfect Match</h2>
+                        <div class="quiz-result-card">
+                            <img src="./images/${product.images[0]}" alt="${product.name}">
+                            <h3>${product.name}</h3>
+                            <p class="current-price">₹${product.price}</p>
+                            ${product.notes ? `<p>${product.notes}</p>` : ''}
+                            <a href="${pageUrl}" class="btn btn-primary">View Fragrance</a>
+                        </div>
+                        <button class="btn btn-secondary retake-quiz-btn" style="margin-top: 1rem;">Retake Quiz</button>
+                    </div>
+                `;
+
+                container.querySelector('.retake-quiz-btn')?.addEventListener('click', () => {
+                    this.currentQuestion = 0;
+                    this.answers = {};
+                    this.renderQuestion(container);
+                });
             }
         }
     };
+
+    // --- MAKE APP GLOBAL ---
+    window.app = app;
 
     // --- START THE APP ---
     app.init();
