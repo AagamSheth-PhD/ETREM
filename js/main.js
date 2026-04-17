@@ -195,7 +195,6 @@ document.addEventListener("DOMContentLoaded", () => {
             },
         },
 
-        // [PASTE THIS CODE TO REPLACE THE STUBBED-OUT MODULES IN main.js]
 
         // --- 7. WISHLIST MODULE ---
         wishlist: {
@@ -334,7 +333,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
                 // ... Render cart items and summary ...
-                // This part can be quite extensive, similar to the blueprint
+        
             }
         },
 
