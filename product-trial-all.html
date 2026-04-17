@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en-in">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETREM Ultimate Trial Pack | All 9 Fragrances | ₹299</title>
+    <meta name="description" content="Experience the entire ETREM collection. The Ultimate Trial Pack includes a 5ml vial of all 9 of our signature long-lasting perfumes. Free shipping.">
+    <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+    <header class="header solid"></header>
+    <main class="product-detail-page" data-product-id="trial-all">
+        <div class="container product-layout">
+            <div class="product-gallery">
+                <div class="main-image"><img src="./images/49.webp" alt="ETREM Ultimate Trial Pack with all 9 perfumes India" id="mainProductImage" loading="lazy"></div>
+                <div class="thumbnail-images">
+                    <img src="./images/49.webp" alt="ETREM Ultimate Trial Pack box" class="thumb-img active" data-main-src="./images/49.webp">
+                    <img src="./images/3.webp" alt="The Poem perfume" class="thumb-img" data-main-src="./images/3.webp">
+                     <img src="./images/6.webp" alt="The Expanse perfume" class="thumb-img" data-main-src="./images/6.webp">
+                </div>
+            </div>
+            <div class="product-info">
+                <h1 id="productName">Trial Pack – The Ultimate Collection</h1>
+                <p class="product-tagline"><i>Experience Everything. Find Your One.</i></p>
+                <div class="price-section">
+                    <div class="price-container"><span class="current-price" id="productPrice">₹299</span><span class="original-price" id="originalPrice"></span></div>
+                </div>
+                <p class="product-description">For the indecisive and the curious. The Ultimate Trial Pack is your all-access pass to the entire ETREM universe. Journey through our complete collection of 9 unique fragrances and discover the scents that truly define you. Includes 9 x 5ml vials.</p>
+                <div class="included-scents">
+                    <h4>Includes 5ml of all 9 fragrances.</h4>
+                </div>
+                <div class="quantity-selector">
+                    <h4>Quantity:</h4>
+                    <div class="quantity-input"><button id="decrease-qty">-</button><input type="number" id="quantity" value="1" min="1" max="10" readonly><button id="increase-qty">+</button></div>
+                </div>
+                <button class="btn btn-primary btn-block add-to-cart-pdp">Add to Cart</button>
+                <button class="btn btn-secondary btn-block wishlist-btn"><span class="heart-icon">♡</span> Add to Wishlist</button>
+            </div>
+        </div>
+    </main>
+    <footer></footer>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="./js/main.js" defer></script>
+</body>
+</html>

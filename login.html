@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en-in">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login / Sign Up - ETREM</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+    <header class="header solid"></header>
+    <main class="auth-page">
+        <div class="auth-container">
+            <div class="auth-form-wrapper" id="login-wrapper">
+                <h2>Login</h2>
+                <form id="login-form">
+                    <div class="form-group"><label for="login-email">Email</label><input type="email" id="login-email" required></div>
+                    <div class="form-group"><label for="login-password">Password</label><input type="password" id="login-password" required></div>
+                    <p class="auth-error" id="login-error"></p>
+                    <button type="submit" class="btn btn-primary btn-block">Login</button>
+                </form>
+                <div class="auth-divider"><span>OR</span></div>
+                <button class="btn btn-google btn-block" id="google-signin-btn"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo"> Sign in with Google</button>
+                <p class="auth-toggle">Don't have an account? <a href="#" id="show-signup">Sign Up</a></p>
+            </div>
+            <div class="auth-form-wrapper" id="signup-wrapper" style="display:none;">
+                <h2>Create Account</h2>
+                <form id="signup-form">
+                    <div class="form-group"><label for="signup-name">Full Name</label><input type="text" id="signup-name" required></div>
+                    <div class="form-group"><label for="signup-email">Email</label><input type="email" id="signup-email" required></div>
+                    <div class="form-group"><label for="signup-password">Password</label><input type="password" id="signup-password" required minlength="6"></div>
+                    <p class="auth-error" id="signup-error"></p>
+                    <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+                </form>
+                <p class="auth-toggle">Already have an account? <a href="#" id="show-login">Login</a></p>
+            </div>
+        </div>
+    </main>
+    <footer></footer>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="./js/main.js" defer></script>
+</body>
+</html>

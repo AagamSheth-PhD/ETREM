@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://etrem.in/sitemap.xml

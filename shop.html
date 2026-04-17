@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en-in">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop All Fragrances – ETREM The Naked Perfume</title>
+    <meta name="description" content="Explore the full collection of ETREM's long-lasting perfumes, trial packs, and combos. Shop online for luxury fragrances in India, starting at ₹99.">
+    <link rel="stylesheet" href="./css/styles.css">
+    <!-- Other meta tags -->
+</head>
+<body>
+    <header class="header solid"></header>
+
+    <main class="shop-page">
+        <div class="container">
+            <div class="shop-header">
+                <h1>The Collection</h1>
+                <div class="sort-options">
+                    <label for="sort-by">Sort By:</label>
+                    <select id="sort-by">
+                        <option value="newest">Newest First</option>
+                        <option value="price-asc">Price: Low to High</option>
+                        <option value="price-desc">Price: High to Low</option>
+                        <option value="best-sellers">Best Sellers</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="category-tabs">
+                <button class="cat-tab active" data-category="all">All</button>
+                <button class="cat-tab" data-category="individual-50ml">Individual (50ml)</button>
+                <button class="cat-tab" data-category="individual-20ml">Individual (20ml)</button>
+                <button class="cat-tab" data-category="trial">Trial Packs</button>
+                <button class="cat-tab" data-category="combo-him">Combos - Him</button>
+                <button class="cat-tab" data-category="combo-her">Combos - Her</button>
+                <button class="cat-tab" data-category="combo-unisex">Combos - Unisex</button>
+            </div>
+
+            <div class="shop-layout">
+                <aside class="filter-sidebar">
+                    <h3>Filters</h3>
+                    <div class="filter-group">
+                        <h4>Gender</h4>
+                        <label><input type="checkbox" name="gender" value="Masculine"> Masculine</label>
+                        <label><input type="checkbox" name="gender" value="Feminine"> Feminine</label>
+                        <label><input type="checkbox" name="gender" value="Unisex"> Unisex</label>
+                    </div>
+                    <div class="filter-group">
+                        <h4>Fragrance Family</h4>
+                        <label><input type="checkbox" name="family" value="Aquatic"> Aquatic</label>
+                        <label><input type="checkbox" name="family" value="Woody"> Woody</label>
+                        <label><input type="checkbox" name="family" value="Floral"> Floral</label>
+                        <label><input type="checkbox" name="family" value="Gourmand"> Gourmand</label>
+                        <label><input type="checkbox" name="family" value="Aromatic"> Aromatic</label>
+                        <label><input type="checkbox" name="family" value="Oriental"> Oriental</label>
+                    </div>
+                    <div class="filter-group">
+                        <h4>Price Range</h4>
+                        <label><input type="radio" name="price" value="0-199"> Under ₹199</label>
+                        <label><input type="radio" name="price" value="199-499"> ₹199 – ₹499</label>
+                        <label><input type="radio" name="price" value="499-1099"> ₹499 – ₹1099</label>
+                        <label><input type="radio" name="price" value="1099-Infinity"> Above ₹1099</label>
+                    </div>
+                    <button id="clear-filters" class="btn btn-secondary">Clear Filters</button>
+                </aside>
+
+                <section id="shop-product-grid" class="product-grid">
+                    <!-- Products will be dynamically loaded here by JavaScript -->
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <footer></footer>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="./js/main.js" defer></script>
+</body>
+</html>

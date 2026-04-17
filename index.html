@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en-in">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETREM – The Naked Perfume | #Lastsforever | Buy Luxury Fragrances in India</title>
+    <meta name="description" content="ETREM is India's raw, honest luxury perfume brand. Long-lasting fragrances with no gimmicks. Shop The Expanse and The Warden. Pan-India delivery. #Lastsforever">
+    <link rel="stylesheet" href="./css/styles.css">
+    <!-- Other meta tags as before -->
+</head>
+<body>
+    <header class="header"></header>
+
+    <main>
+        <!-- Section 1: Cinematic Hero Slider -->
+        <section class="hero-slider-section">
+            <div class="hero-slider">
+                <div class="slide active">
+                    <picture>
+                        <source media="(max-width: 768px)" srcset="./images/mobile1.webp">
+                        <img src="./images/desktop1.webp" alt="ETREM Perfumes Lifestyle Banner">
+                    </picture>
+                </div>
+                <div class="slide">
+                    <picture>
+                        <source media="(max-width: 768px)" srcset="./images/mobile2.webp">
+                        <img src="./images/desktop2.webp" alt="ETREM Fragrance Collection">
+                    </picture>
+                </div>
+                <div class="slide">
+                    <picture>
+                        <source media="(max-width: 768px)" srcset="./images/mobile3.webp">
+                        <img src="./images/desktop3.webp" alt="Model wearing ETREM Perfume">
+                    </picture>
+                </div>
+            </div>
+            <div class="slider-controls">
+                <button class="slider-arrow prev">&lt;</button>
+                <button class="slider-arrow next">&gt;</button>
+            </div>
+            <div class="slider-dots"></div>
+        </section>
+
+        <!-- Section 2: Featured Fragrances -->
+        <section class="featured-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Best Sellers</h2>
+                </div>
+                <div class="product-grid" id="featured-products">
+                    <!-- Best seller products will be dynamically inserted here by JS -->
+                </div>
+                <div class="center" style="margin-top: 2rem;">
+                    <a href="./shop.html" class="btn btn-primary">View All</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Other homepage sections like Manifesto, USP, etc. can remain as they were -->
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Firebase and Main JS -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="./js/main.js" defer></script>
+    <!-- Google Analytics Placeholder -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=YOUR_GA_TRACKING_ID"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'YOUR_GA_TRACKING_ID');
+    </script>
+</body>
+</html>

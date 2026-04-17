@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en-in">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Account - ETREM</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+    <header class="header solid"></header>
+    <main class="profile-page">
+        <div class="container">
+            <div class="section-header">
+                <h1>My Account</h1>
+            </div>
+            <div class="profile-layout">
+                <aside class="profile-nav">
+                    <ul>
+                        <li><a href="#details" class="profile-tab active" data-target="details-content">Account Details</a></li>
+                        <li><a href="#orders" class="profile-tab" data-target="orders-content">Order History</a></li>
+                        <li><a href="#" id="logout-btn">Logout</a></li>
+                    </ul>
+                </aside>
+                <section class="profile-content">
+                    <div id="details-content" class="profile-tab-content active">
+                        <h3>Account Details</h3>
+                        <p><strong>Name:</strong> <span id="profile-name">Loading...</span></p>
+                        <p><strong>Email:</strong> <span id="profile-email">Loading...</span></p>
+                    </div>
+                    <div id="orders-content" class="profile-tab-content">
+                        <h3>Order History</h3>
+                        <div id="order-history-container">
+                            <p>You have not placed any orders yet.</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+    <footer></footer>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="./js/main.js" defer></script>
+</body>
+</html>

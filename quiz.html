@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en-in">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Your Scent - ETREM Perfume Quiz</title>
+    <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+    <header class="header solid"></header>
+    <main class="quiz-page">
+        <div class="container">
+            <div id="quiz-container">
+                <div class="quiz-question active" data-question="1">
+                    <h2>1. What's your ideal vibe for an evening out?</h2>
+                    <div class="quiz-options">
+                        <button class="quiz-option" data-value="woody">Confident and Commanding</button>
+                        <button class="quiz-option" data-value="oriental">Mysterious and Seductive</button>
+                        <button class="quiz-option" data-value="fresh">Effortless and Casual</button>
+                        <button class="quiz-option" data-value="gourmand">Playful and Sweet</button>
+                    </div>
+                </div>
+                 <!-- Other questions will be added and handled by JS -->
+            </div>
+            <div id="quiz-result" style="display:none;">
+                <h2>We Recommend...</h2>
+                <div id="result-product-card">
+                    <!-- Result will be populated by JS -->
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer></footer>
+    <script src="./js/main.js" defer></script>
+</body>
+</html>
