@@ -17,11 +17,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const EMAILJS_PUBLIC_KEY = "YOUR_EMAILJS_PUBLIC_KEY_HERE";
 
     // Initialize Firebase
-    try {
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.database();
-    } catch (error) {
+    let auth, db;
+try {
+    firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+    db = firebase.database();
+} catch (error) { 
         console.error("Firebase initialization failed:", error);
     }
 
@@ -65,10 +66,22 @@ document.addEventListener("DOMContentLoaded", () => {
             { id: 'combo-him-50ml', name: 'Combo For Him (3 x 50ml)', price: 1099, mrp: 1799, images: ['82.webp'], category: 'combo-him', gender: 'Masculine' },
         ],
         cart: [],
-        wishlist: [],
+        wishlistItems: [],
         currentUser: null,
 
         // --- CORE INITIALIZATION ---
+renderSharedComponents() {
+            // Add your header/footer/nav render logic here
+        },
+
+        initHomePage() {
+            // Add your hero slider and home page logic here
+        },
+
+        initShopPage() {
+            this.shop.initShopPage();
+        },
+
         init() {
             this.cart = JSON.parse(localStorage.getItem('etremCart')) || [];
             this.renderSharedComponents();
@@ -251,7 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
             },
 
             updateHeartIcon(productId) {
-                document.querySelectorAll(`[data-product-id="${productId}"] .wishlist-btn .heart-icon`).forEach(icon => {
+                document.querySelectorAll(`.wishlist-btn[data-product-id="${productId}"] .heart-icon`).forEach(icon => {
                     const isWishlisted = this.includes(productId);
                     icon.classList.toggle('filled', isWishlisted);
                     icon.innerHTML = isWishlisted ? '♥' : '♡';
@@ -332,8 +345,41 @@ document.addEventListener("DOMContentLoaded", () => {
                     cartContent.innerHTML = `<div class="empty-cart"><p>Your cart is empty.</p><a href="./shop.html" class="btn btn-primary">Continue Shopping</a></div>`;
                     return;
                 }
-                // ... Render cart items and summary ...
-        
+
+                const cartItems = app.cart.map(item => {
+                    const product = app.products.find(p => p.id === item.id);
+                    if (!product) return '';
+                    return `
+                        <div class="cart-item" data-id="${product.id}">
+                            <img src="./images/${product.images[0]}" alt="${product.name}">
+                            <div class="cart-item-details">
+                                <h4>${product.name}</h4>
+                                <p>₹${product.price}</p>
+                            </div>
+                            <div class="cart-item-controls">
+                                <button class="qty-btn" onclick="app.cartManager.update('${product.id}', ${item.quantity - 1})">−</button>
+                                <span>${item.quantity}</span>
+                                <button class="qty-btn" onclick="app.cartManager.update('${product.id}', ${item.quantity + 1})">+</button>
+                            </div>
+                            <p class="cart-item-total">₹${product.price * item.quantity}</p>
+                            <button class="remove-btn" onclick="app.cartManager.remove('${product.id}')">✕</button>
+                        </div>
+                    `;
+                }).join('');
+
+                const total = app.cart.reduce((sum, item) => {
+                    const product = app.products.find(p => p.id === item.id);
+                    return sum + (product ? product.price * item.quantity : 0);
+                }, 0);
+
+                cartContent.innerHTML = `
+                    <div class="cart-items">${cartItems}</div>
+                    <div class="cart-summary">
+                        <h3>Order Summary</h3>
+                        <p>Total: <strong>₹${total}</strong></p>
+                        <a href="./checkout.html" class="btn btn-primary">Proceed to Checkout</a>
+                    </div>
+                `;
             }
         },
 
