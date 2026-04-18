@@ -253,6 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <ul>
                                     <li><a href="./shipping-returns.html">Shipping & Returns</a></li>
                                     <li><a href="./privacy-policy.html">Privacy Policy</a></li>
+                                    <li><a href="./terms-of-service.html">Terms of Service</a></li>
                                 </ul>
                             </div>
                             <div class="footer-col">
