@@ -6,12 +6,15 @@
     <title>ETREM The Affair – Gourmand Floral Perfume for Women | ₹399</title>
     <meta name="description" content="Indulge in ETREM The Affair, a seductive Gourmand Floral perfume for women with notes of Coffee, Cacao Vanilla, and Jasmine. A scent for intimate moments in India.">
     <link rel="stylesheet" href="./css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Product",
       "name": "ETREM The Affair",
-      "description": "Dark, addictive, and impossibly seductive. The Affair is a secret worth keeping. It opens with an electrifying jolt of black coffee and almond, which slowly gives way to a heart of intoxicating white florals like tuberose and jasmine. The fragrance settles into a dark, delicious base of cacao, vanilla, and cinnamon, creating a scent that’s both dangerously tempting and deeply comforting. This is temptation in a bottle.",
+      "description": "Dark, addictive, and impossibly seductive. The Affair is a secret worth keeping. It opens with an electrifying jolt of black coffee and almond, which slowly gives way to a heart of intoxicating white florals like tuberose and jasmine. The fragrance settles into a dark, delicious base of cacao, vanilla, and cinnamon, creating a scent that's both dangerously tempting and deeply comforting. This is temptation in a bottle.",
       "image": "images/13.webp",
       "brand": { "@type": "Brand", "name": "ETREM" },
       "sku": "ETM-AFF-50",
@@ -21,6 +24,11 @@
     </script>
 </head>
 <body>
+    <div id="search-overlay" class="search-overlay">
+        <button id="close-search" class="close-search">&times;</button>
+        <input type="text" id="search-input" placeholder="Search for a fragrance...">
+        <div id="search-results"></div>
+    </div>
     <header class="header solid"></header>
     <main class="product-detail-page" data-product-id="the-affair">
         <div class="container product-layout">
@@ -40,7 +48,7 @@
                     <div class="price-container"><span class="current-price" id="productPrice">₹399</span><span class="original-price" id="originalPrice">₹599</span></div>
                     <span class="savings-label" id="savingsLabel">You save 33%</span>
                 </div>
-                <p class="product-description">Dark, addictive, and impossibly seductive. The Affair opens with an electrifying jolt of black coffee and almond, giving way to a heart of intoxicating white florals. It settles into a dark, delicious base of cacao, vanilla, and cinnamon—a scent that’s both tempting and deeply comforting.</p>
+                <p class="product-description">Dark, addictive, and impossibly seductive. The Affair opens with an electrifying jolt of black coffee and almond, giving way to a heart of intoxicating white florals. It settles into a dark, delicious base of cacao, vanilla, and cinnamon—a scent that's both tempting and deeply comforting.</p>
                 <div class="volume-selector">
                     <h4>Size:</h4>
                     <div class="volume-options">
@@ -63,9 +71,10 @@
         </div>
     </main>
     <footer></footer>
+    <div id="toast-container"></div>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="./js/main.js" defer></script>
 </body>
 </html>
