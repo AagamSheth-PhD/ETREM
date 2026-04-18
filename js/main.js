@@ -14,9 +14,9 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const RAZORPAY_KEY_ID = "rzp_live_SeyxOn5i0PuGaO";
-    const EMAILJS_SERVICE_ID = "service_r7f83sg";
-    const EMAILJS_TEMPLATE_ID = "template_jlyjy5i";
-    const EMAILJS_PUBLIC_KEY = "M2IU4HlY2wh4L6Fc0";
+    const EMAILJS_SERVICE_ID = "YOUR_EMAILJS_SERVICE_ID_HERE";
+    const EMAILJS_TEMPLATE_ID = "YOUR_EMAILJS_TEMPLATE_ID_HERE";
+    const EMAILJS_PUBLIC_KEY = "YOUR_EMAILJS_PUBLIC_KEY_HERE";
 
     // Initialize Firebase
     let auth, db;
@@ -1038,51 +1038,197 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // --- 9. CHECKOUT MODULE ---
         checkout: {
-            initCheckoutPage() {
-                const summary = document.getElementById('checkout-summary');
-                if (!summary) return;
+            FREE_SHIPPING_THRESHOLD: 499,
+            SHIPPING_COST: 60,
 
+            initCheckoutPage() {
+                const checkoutItemsEl = document.getElementById('checkout-items');
+                const subtotalEl = document.getElementById('checkout-subtotal');
+                const shippingEl = document.getElementById('checkout-shipping');
+                const totalEl = document.getElementById('checkout-total');
+                const placeOrderBtn = document.getElementById('place-order-btn');
+
+                if (!checkoutItemsEl) return;
+
+                // If cart is empty, redirect to shop
                 if (app.cart.length === 0) {
-                    summary.innerHTML = `<p>Your cart is empty. <a href="./shop.html">Continue Shopping</a></p>`;
+                    checkoutItemsEl.innerHTML = `<p>Your cart is empty. <a href="./shop.html">Continue Shopping</a></p>`;
+                    if (placeOrderBtn) placeOrderBtn.disabled = true;
                     return;
                 }
 
-                let total = 0;
-                const items = app.cart.map(item => {
+                // Render order summary
+                let subtotal = 0;
+                checkoutItemsEl.innerHTML = app.cart.map(item => {
                     const product = app.products.find(p => p.id === item.id);
                     if (!product) return '';
-                    const subtotal = product.price * item.quantity;
-                    total += subtotal;
+                    const itemTotal = product.price * item.quantity;
+                    subtotal += itemTotal;
                     return `
-                        <div class="checkout-item">
+                        <div class="summary-row">
                             <span>${product.name} × ${item.quantity}</span>
-                            <span>₹${subtotal}</span>
+                            <span>₹${itemTotal}</span>
                         </div>
                     `;
                 }).join('');
 
-                summary.innerHTML = `
-                    <div class="checkout-items">${items}</div>
-                    <div class="checkout-total">
-                        <strong>Total: ₹${total}</strong>
-                    </div>
-                `;
+                const shipping = subtotal >= this.FREE_SHIPPING_THRESHOLD ? 0 : this.SHIPPING_COST;
+                const grandTotal = subtotal + shipping;
 
-                // Checkout form submission
-                const checkoutForm = document.getElementById('checkout-form');
-                if (checkoutForm) {
-                    checkoutForm.addEventListener('submit', (e) => {
+                if (subtotalEl) subtotalEl.textContent = `₹${subtotal}`;
+                if (shippingEl) shippingEl.textContent = shipping === 0 ? 'FREE' : `₹${shipping}`;
+                if (totalEl) totalEl.textContent = `₹${grandTotal}`;
+
+                // Store totals for placeOrder
+                this._orderTotal = grandTotal;
+                this._subtotal = subtotal;
+                this._shipping = shipping;
+
+                // Place Order button
+                if (placeOrderBtn) {
+                    placeOrderBtn.addEventListener('click', (e) => {
                         e.preventDefault();
-                        app.showToast('Order placed successfully! 🎉');
-                        app.cart = [];
-                        app.cartManager.save();
-                        setTimeout(() => window.location.href = './index.html', 2000);
+                        this.placeOrder();
                     });
+                }
+
+                // Pre-fill email if user is logged in
+                if (app.currentUser && app.currentUser.email) {
+                    const emailInput = document.getElementById('email');
+                    if (emailInput) emailInput.value = app.currentUser.email;
+                    const nameInput = document.getElementById('name');
+                    if (nameInput && app.currentUser.displayName) nameInput.value = app.currentUser.displayName;
                 }
             },
 
             placeOrder() {
-                // Placeholder for Razorpay / COD integration
+                // Validate shipping form
+                const form = document.getElementById('shipping-form');
+                if (form && !form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                // Collect shipping details
+                const shippingDetails = {
+                    name: document.getElementById('name')?.value || '',
+                    email: document.getElementById('email')?.value || '',
+                    phone: document.getElementById('phone')?.value || '',
+                    address: document.getElementById('address')?.value || '',
+                    city: document.getElementById('city')?.value || '',
+                    state: document.getElementById('state')?.value || '',
+                    pincode: document.getElementById('pincode')?.value || ''
+                };
+
+                const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value || 'razorpay';
+                const totalAmount = this._orderTotal || 0;
+
+                if (totalAmount <= 0) {
+                    app.showToast('Cart is empty.', 'error');
+                    return;
+                }
+
+                if (paymentMethod === 'cod') {
+                    // Cash on Delivery
+                    this._saveOrder(shippingDetails, 'COD', 'cod_' + Date.now());
+                } else {
+                    // Razorpay Online Payment
+                    if (typeof Razorpay === 'undefined') {
+                        app.showToast('Payment gateway failed to load. Please refresh and try again.', 'error');
+                        console.error('Razorpay SDK not loaded.');
+                        return;
+                    }
+
+                    const options = {
+                        key: RAZORPAY_KEY_ID,
+                        amount: totalAmount * 100, // Razorpay uses paise
+                        currency: 'INR',
+                        name: 'ETREM – The Naked Perfume',
+                        description: `Order of ${app.cart.length} item(s)`,
+                        image: './images/etrem.webp',
+                        prefill: {
+                            name: shippingDetails.name,
+                            email: shippingDetails.email,
+                            contact: shippingDetails.phone
+                        },
+                        theme: {
+                            color: '#C9A84C'
+                        },
+                        handler: (response) => {
+                            // Payment successful
+                            this._saveOrder(shippingDetails, 'Razorpay', response.razorpay_payment_id);
+                        },
+                        modal: {
+                            ondismiss: () => {
+                                app.showToast('Payment cancelled.', 'error');
+                            }
+                        }
+                    };
+
+                    try {
+                        const rzp = new Razorpay(options);
+                        rzp.on('payment.failed', (response) => {
+                            app.showToast('Payment failed: ' + response.error.description, 'error');
+                            console.error('Razorpay Error:', response.error);
+                        });
+                        rzp.open();
+                    } catch (err) {
+                        console.error('Razorpay error:', err);
+                        app.showToast('Could not open payment gateway. Please try again.', 'error');
+                    }
+                }
+            },
+
+            _saveOrder(shippingDetails, paymentMethod, paymentId) {
+                const orderData = {
+                    items: app.cart.map(item => {
+                        const product = app.products.find(p => p.id === item.id);
+                        return {
+                            id: item.id,
+                            name: product ? product.name : item.id,
+                            price: product ? product.price : 0,
+                            quantity: item.quantity,
+                            volume: item.volume || ''
+                        };
+                    }),
+                    subtotal: this._subtotal,
+                    shipping: this._shipping,
+                    total: this._orderTotal,
+                    shippingDetails: shippingDetails,
+                    paymentMethod: paymentMethod,
+                    paymentId: paymentId,
+                    status: paymentMethod === 'COD' ? 'confirmed' : 'paid',
+                    createdAt: new Date().toISOString(),
+                    userId: app.currentUser ? app.currentUser.uid : 'guest'
+                };
+
+                // Save to Firebase if available
+                if (db) {
+                    const orderRef = db.ref('orders').push();
+                    orderRef.set(orderData)
+                        .then(() => console.log('Order saved to Firebase:', orderRef.key))
+                        .catch(err => console.error('Firebase order save failed:', err));
+
+                    // Also save to user's orders if logged in
+                    if (app.currentUser) {
+                        db.ref(`users/${app.currentUser.uid}/orders/${orderRef.key}`).set(orderData)
+                            .catch(err => console.error('User order save failed:', err));
+                    }
+                }
+
+                // Clear cart
+                app.cart = [];
+                app.cartManager.save();
+                app.cartManager.updateCartCount();
+
+                // Show success
+                const method = paymentMethod === 'COD' ? 'Cash on Delivery' : 'Online Payment';
+                app.showToast(`Order placed successfully via ${method}! 🎉`);
+
+                // Redirect to home after delay
+                setTimeout(() => {
+                    window.location.href = './index.html';
+                }, 2500);
             }
         },
 
