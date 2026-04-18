@@ -260,7 +260,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <ul>
                                     <li><a href="mailto:etrem.perfumes@gmail.com">etrem.perfumes@gmail.com</a></li>
                                     <li><a href="tel:+917069122218">+91 7069 122 218</a></li>
-                                    <li><a href="https://www.instagram.com/etrem.in" target="_blank">Instagram</a></li>
+                                    <li><a href="https://www.instagram.com/etrem_perfume?igsh=NW5lazVrYWtxYjlj" target="_blank">Instagram</a></li>
                                 </ul>
                             </div>
                             <div class="footer-col">
