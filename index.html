@@ -6,14 +6,50 @@
     <title>ETREM – The Naked Perfume | #Lastsforever | Buy Luxury Fragrances in India</title>
     <meta name="description" content="ETREM is India's raw, honest luxury perfume brand. Long-lasting fragrances, trial packs, and combos with no gimmicks. Pan-India delivery. #Lastsforever">
     <link rel="canonical" href="https://etrem.in/">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="ETREM – The Naked Perfume | Luxury Fragrances in India">
+    <meta property="og:description" content="India's raw, honest luxury perfume brand. Long-lasting fragrances, trial packs, and combos. No gimmicks. Just scent. #Lastsforever">
+    <meta property="og:image" content="https://etrem.in/images/desktop1.webp">
+    <meta property="og:url" content="https://etrem.in/">
+    <meta property="og:site_name" content="ETREM">
+
+    <!-- LCP Preload -->
+    <link rel="preload" as="image" href="./images/desktop1.webp">
+
+    <!-- Organization Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "ETREM",
+      "alternateName": "ETREM – The Naked Perfume",
+      "url": "https://etrem.in",
+      "logo": "https://etrem.in/images/etrem.webp",
+      "description": "India's raw, honest luxury perfume brand. Long-lasting fragrances with no gimmicks.",
+      "email": "etrem.perfumes@gmail.com",
+      "sameAs": [
+        "https://www.instagram.com/etrem.in"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "email": "etrem.perfumes@gmail.com",
+        "contactType": "customer service"
+      }
+    }
+    </script>
+
     <link rel="stylesheet" href="./css/styles.css">
-    
-    <!-- SEO, OG Tags, Fonts as before -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Visually hidden H1 for SEO (logo serves as visual title) -->
+    <h1 class="sr-only">ETREM – The Naked Perfume | Buy Luxury Fragrances Online in India</h1>
+
     <!-- Search Overlay Structure -->
     <div id="search-overlay" class="search-overlay">
         <button id="close-search" class="close-search">&times;</button>
@@ -32,7 +68,7 @@
                     <a href="./shop.html">
                         <picture>
                             <source media="(max-width: 768px)" srcset="./images/mobile1.webp">
-                            <img src="./images/desktop1.webp" alt="ETREM Perfumes Collection Banner">
+                            <img src="./images/desktop1.webp" alt="ETREM Perfumes Collection Banner" fetchpriority="high">
                         </picture>
                     </a>
                 </div>
@@ -40,7 +76,7 @@
                     <a href="./shop.html?category=combo-her">
                         <picture>
                             <source media="(max-width: 768px)" srcset="./images/mobile2.webp">
-                            <img src="./images/desktop2.webp" alt="ETREM Perfumes For Her">
+                            <img src="./images/desktop2.webp" alt="ETREM Perfumes For Her" loading="lazy">
                         </picture>
                     </a>
                 </div>
@@ -48,7 +84,7 @@
                      <a href="./shop.html?category=combo-him">
                         <picture>
                             <source media="(max-width: 768px)" srcset="./images/mobile3.webp">
-                            <img src="./images/desktop3.webp" alt="ETREM Perfumes For Him">
+                            <img src="./images/desktop3.webp" alt="ETREM Perfumes For Him" loading="lazy">
                         </picture>
                     </a>
                 </div>
@@ -111,8 +147,20 @@
         
     </main>
 
-    <!-- Footer will be injected by main.js -->
-    <footer></footer>
+    <!-- Static crawlable footer (JS will enhance this, but crawlers see these links) -->
+    <footer>
+        <nav class="seo-footer" aria-label="Footer Navigation">
+            <a href="./shop.html">Shop All Fragrances</a>
+            <a href="./about.html">About ETREM</a>
+            <a href="./contact.html">Contact Us</a>
+            <a href="./blog.html">Blog</a>
+            <a href="./quiz.html">Find Your Scent</a>
+            <a href="./privacy-policy.html">Privacy Policy</a>
+            <a href="./shipping-returns.html">Shipping &amp; Returns</a>
+        </nav>
+        <p>&copy; 2026 ETREM – The Naked Perfume. All rights reserved.</p>
+        <p>Designed and Developed by <a href="https://digitalorigami.in" target="_blank" rel="noopener">Digital Origami</a></p>
+    </footer>
 
     <!-- Floating WhatsApp Button -->
     <a href="https://wa.me/YOUR_WHATSAPP_NUMBER_HERE" target="_blank" class="whatsapp-float" aria-label="Chat on WhatsApp">
