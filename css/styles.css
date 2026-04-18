@@ -40,6 +40,9 @@ ul { list-style: none; }
 .section-header h1, .section-header h2 { padding-bottom: 0.5rem; border-bottom: 2px solid var(--accent-gold); display: inline-block; }
 .center { text-align: center; }
 .hidden { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.seo-footer { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; padding: 1rem 0; }
+.seo-footer a { color: var(--text-muted); font-size: 0.85rem; }
 
 /* --- NAVBAR & SHARED COMPONENTS --- */
 .header { position: fixed; top: 0; left: 0; width: 100%; z-index: 100; transition: background-color 0.4s ease; padding: 1rem 0; background-color: rgba(10, 10, 10, 0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-subtle); }
