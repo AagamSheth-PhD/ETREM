@@ -256,7 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div class="footer-col">
                                 <h4>Get In Touch</h4>
                                 <ul>
-                                    <li><a href="mailto:hello@etrem.in">hello@etrem.in</a></li>
+                                    <li><a href="mailto:etrem.perfumes@gmail.com">etrem.perfumes@gmail.com</a></li>
                                     <li><a href="https://www.instagram.com/etrem.in" target="_blank">Instagram</a></li>
                                 </ul>
                             </div>
@@ -491,6 +491,14 @@ document.addEventListener("DOMContentLoaded", () => {
         // --- CORE INITIALIZATION ---
         init() {
             this.cart = JSON.parse(localStorage.getItem('etremCart')) || [];
+
+            // Clean up stale/invalid cart items that don't match any product
+            const validCart = this.cart.filter(item => this.products.some(p => p.id === item.id));
+            if (validCart.length !== this.cart.length) {
+                this.cart = validCart;
+                localStorage.setItem('etremCart', JSON.stringify(this.cart));
+            }
+
             this.renderSharedComponents();
             this.auth.init();
 
