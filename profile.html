@@ -3,52 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ETREM Trial Pack – Unisex Collection | 3 x 5ml | ₹99</title>
-    <meta name="description" content="Explore the ETREM Unisex Trial Pack. Features 5ml vials of The Genesis, The Reign, and The Murk. The perfect versatile perfumes for anyone in India.">
+    <title>Find Your Scent - ETREM Perfume Quiz</title>
     <link rel="stylesheet" href="./css/styles.css">`n    <link rel="preconnect" href="https://fonts.googleapis.com">`n    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>`n    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="search-overlay" class="search-overlay"><button id="close-search" class="close-search">&times;</button><input type="text" id="search-input" placeholder="Search for a fragrance..."><div id="search-results"></div></div>`n    <header class="header solid"></header>
-    <main class="product-detail-page" data-product-id="trial-unisex">
-        <div class="container product-layout">
-            <div class="product-gallery">
-                <div class="main-image"><img src="./images/47.webp" alt="ETREM Unisex Trial Pack perfume set India" id="mainProductImage" loading="lazy"></div>
-                <div class="thumbnail-images">
-                    <img src="./images/47.webp" alt="ETREM Unisex Trial Pack box" class="thumb-img active" data-main-src="./images/47.webp">
-                    <img src="./images/21.webp" alt="ETREM The Genesis perfume" class="thumb-img" data-main-src="./images/21.webp">
-                    <img src="./images/27.webp" alt="ETREM The Reign perfume" class="thumb-img" data-main-src="./images/27.webp">
-                    <img src="./images/24.webp" alt="ETREM The Murk perfume" class="thumb-img" data-main-src="./images/24.webp">
+    <main class="quiz-page">
+        <div class="container">
+            <div id="quiz-container">
+                <div class="quiz-question active" data-question="1">
+                    <h2>1. What's your ideal vibe for an evening out?</h2>
+                    <div class="quiz-options">
+                        <button class="quiz-option" data-value="woody">Confident and Commanding</button>
+                        <button class="quiz-option" data-value="oriental">Mysterious and Seductive</button>
+                        <button class="quiz-option" data-value="fresh">Effortless and Casual</button>
+                        <button class="quiz-option" data-value="gourmand">Playful and Sweet</button>
+                    </div>
                 </div>
+                 <!-- Other questions will be added and handled by JS -->
             </div>
-            <div class="product-info">
-                <h1 id="productName">Trial Pack – Unisex</h1>
-                <p class="product-tagline"><i>Scents Without Boundaries.</i></p>
-                <div class="price-section">
-                    <div class="price-container"><span class="current-price" id="productPrice">₹99</span><span class="original-price" id="originalPrice"></span></div>
-                    <p>+ shipping</p>
+            <div id="quiz-result" style="display:none;">
+                <h2>We Recommend...</h2>
+                <div id="result-product-card">
+                    <!-- Result will be populated by JS -->
                 </div>
-                <p class="product-description">Fragrance has no gender. This trial pack features our most versatile, crowd-pleasing unisex scents, designed to be loved by all. Find the perfect balance that complements your unique style. Each vial contains 5ml of perfume.</p>
-                <div class="included-scents">
-                    <h4>Includes 5ml of:</h4>
-                    <ul>
-                        <li><a href="product-the-genesis.html">The Genesis:</a> Fruity, Vanilla, Musky</li>
-                        <li><a href="product-the-reign.html">The Reign:</a> Aquatic, Woody, Ambergris</li>
-                        <li><a href="product-the-murk.html">The Murk:</a> Gourmand, Coffee, Vanilla</li>
-                    </ul>
-                </div>
-                <div class="quantity-selector">
-                    <h4>Quantity:</h4>
-                    <div class="quantity-input"><button id="decrease-qty">-</button><input type="number" id="quantity" value="1" min="1" max="10" readonly><button id="increase-qty">+</button></div>
-                </div>
-                <button class="btn btn-primary btn-block add-to-cart-pdp">Add to Cart</button>
-                <button class="btn btn-secondary btn-block wishlist-btn"><span class="heart-icon">♡</span> Add to Wishlist</button>
             </div>
         </div>
     </main>
     <footer></footer>`n    <div id="toast-container"></div>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="./js/main.js" defer></script>
 </body>
 </html>
