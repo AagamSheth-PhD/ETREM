@@ -3,34 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Find Your Scent - ETREM Perfume Quiz</title>
+    <title>My Account - ETREM</title>
+    <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="./css/styles.css">`n    <link rel="preconnect" href="https://fonts.googleapis.com">`n    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>`n    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="search-overlay" class="search-overlay"><button id="close-search" class="close-search">&times;</button><input type="text" id="search-input" placeholder="Search for a fragrance..."><div id="search-results"></div></div>`n    <header class="header solid"></header>
-    <main class="quiz-page">
+    <main class="profile-page">
         <div class="container">
-            <div id="quiz-container">
-                <div class="quiz-question active" data-question="1">
-                    <h2>1. What's your ideal vibe for an evening out?</h2>
-                    <div class="quiz-options">
-                        <button class="quiz-option" data-value="woody">Confident and Commanding</button>
-                        <button class="quiz-option" data-value="oriental">Mysterious and Seductive</button>
-                        <button class="quiz-option" data-value="fresh">Effortless and Casual</button>
-                        <button class="quiz-option" data-value="gourmand">Playful and Sweet</button>
-                    </div>
-                </div>
-                 <!-- Other questions will be added and handled by JS -->
+            <div class="section-header">
+                <h1>My Account</h1>
             </div>
-            <div id="quiz-result" style="display:none;">
-                <h2>We Recommend...</h2>
-                <div id="result-product-card">
-                    <!-- Result will be populated by JS -->
-                </div>
+            <div class="profile-layout">
+                <aside class="profile-nav">
+                    <ul>
+                        <li><a href="#details" class="profile-tab active" data-target="details-content">Account Details</a></li>
+                        <li><a href="#orders" class="profile-tab" data-target="orders-content">Order History</a></li>
+                        <li><a href="#" id="logout-btn">Logout</a></li>
+                    </ul>
+                </aside>
+                <section class="profile-content">
+                    <div id="details-content" class="profile-tab-content active">
+                        <h3>Account Details</h3>
+                        <p><strong>Name:</strong> <span id="profile-name">Loading...</span></p>
+                        <p><strong>Email:</strong> <span id="profile-email">Loading...</span></p>
+                    </div>
+                    <div id="orders-content" class="profile-tab-content">
+                        <h3>Order History</h3>
+                        <div id="order-history-container">
+                            <p>You have not placed any orders yet.</p>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
     </main>
     <footer></footer>`n    <div id="toast-container"></div>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="./js/main.js" defer></script>
 </body>
 </html>
