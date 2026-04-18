@@ -72,6 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
             { id: 'combo-unisex-20ml', name: 'Combo Unisex (3 x 20ml)', price: 499, mrp: 999, images: ['66.webp'], category: 'combo-unisex', gender: 'Unisex' },
             { id: 'combo-her-50ml', name: 'Combo For Her (3 x 50ml)', price: 1099, mrp: 1799, images: ['74.webp'], category: 'combo-her', gender: 'Feminine' },
             { id: 'combo-him-50ml', name: 'Combo For Him (3 x 50ml)', price: 1099, mrp: 1799, images: ['82.webp'], category: 'combo-him', gender: 'Masculine' },
+            { id: 'combo-unisex-50ml', name: 'Combo For Both – Unisex (3 x 50ml)', price: 1099, mrp: 1799, images: ['90.webp', '91.webp', '92.webp', '93.webp', '94.webp', '95.webp', '96.webp', '97.webp'], category: 'combo-unisex', gender: 'Unisex' },
         ],
         cart: [],
         wishlistItems: [],
@@ -108,6 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 'combo-unisex-20ml': 'product-combo-unisex-20ml.html',
                 'combo-her-50ml': 'product-combo-her-50ml.html',
                 'combo-him-50ml': 'product-combo-him-50ml.html',
+                'combo-unisex-50ml': 'product-combo-unisex-50ml.html',
             };
             return idToPage[productId] || 'shop.html';
         },
@@ -257,12 +259,14 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <h4>Get In Touch</h4>
                                 <ul>
                                     <li><a href="mailto:etrem.perfumes@gmail.com">etrem.perfumes@gmail.com</a></li>
+                                    <li><a href="tel:+917069122218">+91 7069 122 218</a></li>
                                     <li><a href="https://www.instagram.com/etrem.in" target="_blank">Instagram</a></li>
                                 </ul>
                             </div>
                             <div class="footer-col">
                                 <h4>ETREM</h4>
                                 <p style="color: var(--text-muted);">India's raw, honest luxury perfume brand. No gimmicks. Just scent. #Lastsforever</p>
+                                <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem;">NH INC. | GSTIN: 24AXSPJ6355J1ZY</p>
                             </div>
                         </div>
                         <div class="footer-bottom">
@@ -279,6 +283,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 const tc = document.createElement('div');
                 tc.id = 'toast-container';
                 document.body.appendChild(tc);
+            }
+
+            // Scroll-based header background toggle
+            const headerEl = document.querySelector('.header');
+            if (headerEl && !headerEl.classList.contains('solid')) {
+                window.addEventListener('scroll', () => {
+                    if (window.scrollY > 50) {
+                        headerEl.classList.add('scrolled');
+                    } else {
+                        headerEl.classList.remove('scrolled');
+                    }
+                });
             }
         },
 
