@@ -5,10 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Account - ETREM</title>
     <meta name="robots" content="noindex, nofollow">
-    <link rel="stylesheet" href="./css/styles.css">`n    <link rel="preconnect" href="https://fonts.googleapis.com">`n    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>`n    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="./css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div id="search-overlay" class="search-overlay"><button id="close-search" class="close-search">&times;</button><input type="text" id="search-input" placeholder="Search for a fragrance..."><div id="search-results"></div></div>`n    <header class="header solid"></header>
+    <div id="search-overlay" class="search-overlay"><button id="close-search" class="close-search">&times;</button><input type="text" id="search-input" placeholder="Search for a fragrance..."><div id="search-results"></div></div>
+    <header class="header solid"></header>
     <main class="profile-page">
         <div class="container">
             <div class="section-header">
@@ -38,7 +43,14 @@
             </div>
         </div>
     </main>
-    <footer></footer>`n    <div id="toast-container"></div>
+    <footer>
+        <nav class="seo-footer" aria-label="Footer Navigation">
+            <a href="./shop.html">Shop</a>
+            <a href="./about.html">About</a>
+            <a href="./contact.html">Contact</a>
+        </nav>
+    </footer>
+    <div id="toast-container"></div>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
