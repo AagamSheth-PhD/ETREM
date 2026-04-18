@@ -1,4 +1,15 @@
+# ETREM - robots.txt
+# https://etrem.in
+
 User-agent: *
 Allow: /
 
+# Block user-specific pages (no SEO value)
+Disallow: /cart.html
+Disallow: /checkout.html
+Disallow: /profile.html
+Disallow: /login.html
+Disallow: /wishlist.html
+
+# Sitemap
 Sitemap: https://etrem.in/sitemap.xml
