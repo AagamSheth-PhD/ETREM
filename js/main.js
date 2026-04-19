@@ -984,6 +984,7 @@ document.addEventListener("DOMContentLoaded", () => {
             },
 
 
+        }, // end shop
 
         // --- 7. WISHLIST MODULE ---
         wishlist: {
