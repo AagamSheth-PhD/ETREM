@@ -1218,7 +1218,7 @@ document.addEventListener("DOMContentLoaded", () => {
             add(productId, quantity = 1, volume = '') {
                 const product = app.products.find(p => p.id === productId);
                 if (!product) {
-                    app.showToast("This product is unavailable right now.", "error");
+                    app.showToast(`Product ${productId} is unavailable right now.`, "error");
                     return;
                 }
                 const normalizedVolume = app.normalizeVolume(productId, volume);
@@ -1651,10 +1651,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const orderLineData = app.buildOrderItemDetails(orderData.items);
                 const generatedOrderId = `ETREM-${Date.now()}`;
-                orderData.orderId = generatedOrderId;
+                let resolvedOrderId = generatedOrderId;
+                if (db) {
+                    const orderRefPreview = db.ref('orders').push();
+                    resolvedOrderId = orderRefPreview.key || generatedOrderId;
+                }
+                orderData.orderId = resolvedOrderId;
 
                 const orderSuccessPayload = {
-                    orderId: generatedOrderId,
+                    orderId: resolvedOrderId,
                     createdAt: orderData.createdAt,
                     total: orderData.total,
                     estimatedDelivery: '5-7 business days',
@@ -1668,10 +1673,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // Save to Firebase if available
                 if (db) {
-                    const orderRef = db.ref('orders').push();
-                    const orderId = orderRef.key;
-                    orderData.orderId = orderId;
-                    orderSuccessPayload.orderId = orderId;
+                    const orderRef = db.ref(`orders/${resolvedOrderId}`);
+                    const orderId = resolvedOrderId;
 
                     // 1. Save to global orders
                     orderRef.set(orderData)
@@ -1958,6 +1961,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     itemsEl.innerHTML = '<li>Could not load order details.</li>';
                     totalEl.textContent = '₹0';
                     deliveryEl.textContent = '5-7 business days';
+                    app.showToast('Could not load order details. Please refresh this page.', 'error');
                 }
             }
         },
