@@ -17,8 +17,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const EMAILJS_SERVICE_ID = "service_r7f83sg";
     const EMAILJS_TEMPLATE_ID = "template_jlyjy5i";
     const EMAILJS_PUBLIC_KEY = "M2IU4HlY2wh4L6Fc0";
-    // ⬇️ Replace this URL after deploying your Google Apps Script
-    const GOOGLE_SHEETS_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+    // ⬇️ Google Apps Script deployed Web App URL
+    const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbyikqOUPBPz11d_JMN2qWoO_XiuCdd3oxAveJ65all5pZXFpUoOScmB1F0Phj6DhZDvbQ/exec";
 
     // Initialize Firebase
     let auth, db;
@@ -1527,7 +1527,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             console.log("EmailJS check:", typeof EMAILJS_SERVICE_ID, EMAILJS_SERVICE_ID, EMAILJS_PUBLIC_KEY);
                             const SERVICE_ID = "service_r7f83sg";
                             const ADMIN_TEMPLATE = "template_n4wrqtj";
-                            const CUSTOMER_TEMPLATE = "template_6oupid9";
+                            const CUSTOMER_TEMPLATE = "template_6oupid9"; // Customer order confirmation
                             const PUB_KEY = "M2IU4HlY2wh4L6Fc0";
 
                             // Build per-item product lines (one per item for clarity)
@@ -1567,20 +1567,8 @@ document.addEventListener("DOMContentLoaded", () => {
                                 else console.error('Admin email sending failed', res.status);
                             }).catch(err => console.error('EmailJS admin request failed:', err));
 
-                            // CALL 2 - Customer Confirmation
-                            fetch('https://api.emailjs.com/api/v1.0/email/send', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    service_id: SERVICE_ID,
-                                    template_id: CUSTOMER_TEMPLATE,
-                                    user_id: PUB_KEY,
-                                    template_params: emailParams
-                                })
-                            }).then(res => {
-                                if(res.ok) console.log('Customer order confirmation sent successfully');
-                                else console.error('Customer email sending failed', res.status);
-                            }).catch(err => console.error('EmailJS customer request failed:', err));
+                            // Note: Customer order confirmation is handled via
+                            // tracking-panel.html when owner ships the order.
 
                             // --- GOOGLE SHEETS SYNC ---
                             if (GOOGLE_SHEETS_URL && GOOGLE_SHEETS_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
