@@ -74,8 +74,6 @@
     <script>
         // Contact Form — EmailJS Handler
         document.addEventListener('DOMContentLoaded', function () {
-            emailjs.init("M2IU4HlY2wh4L6Fc0");
-
             const contactForm = document.getElementById('contact-form');
             if (!contactForm) return;
 
@@ -97,13 +95,14 @@
                         template_id: 'template_6oupid9',
                         user_id:     'M2IU4HlY2wh4L6Fc0',
                         template_params: {
-                            email_subject: `New Inquiry from ${name} – ETREM Contact Form`,
+                            email_subject: 'New Inquiry – ETREM Perfumes',
                             to_name:       'ETREM Team',
                             message_body:
-`New inquiry received via etremperfumes.com contact form.
+`New inquiry received via etremperfumes.com.
 
-From: ${name}
+Name: ${name}
 Email: ${email}
+Submitted At: ${new Date().toLocaleString('en-IN')}
 
 Message:
 ${message}
@@ -115,7 +114,6 @@ Reply directly to: ${email}`
                 })
                 .then(res => {
                     if (res.ok) {
-                        console.log('Contact email sent successfully');
                         contactForm.reset();
                         btn.textContent = 'Message Sent ✓';
                         // Show toast if available
@@ -129,7 +127,6 @@ Reply directly to: ${email}`
                     }
                 })
                 .catch(err => {
-                    console.error('Contact form email failed:', err);
                     btn.textContent = 'Send Message';
                     btn.disabled = false;
                     if (typeof app !== 'undefined' && app.showToast) {
