@@ -214,11 +214,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (userIcon) {
                     userIcon.addEventListener('click', (e) => {
                         e.preventDefault();
-                        if (this.currentUser) {
-                            window.location.href = './profile.html';
-                        } else {
-                            window.location.href = './login.html';
-                        }
+                        // Always go to profile page. 
+                        // Logged-in users see their account, guests see the "Track Order" feature.
+                        window.location.href = './profile.html';
                     });
                 }
 
