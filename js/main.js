@@ -1170,11 +1170,20 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
+                // Validate and Clean phone number
+                let phoneInput = document.getElementById('phone')?.value || '';
+                let cleanPhone = phoneInput.replace(/\D/g, '');
+                
+                if (cleanPhone.length !== 10) {
+                    app.showToast('Please enter a valid 10-digit mobile number.', 'error');
+                    return;
+                }
+
                 // Collect shipping details
                 const shippingDetails = {
                     name: document.getElementById('name')?.value || '',
                     email: document.getElementById('email')?.value || '',
-                    phone: document.getElementById('phone')?.value || '',
+                    phone: cleanPhone,
                     address: document.getElementById('address')?.value || '',
                     city: document.getElementById('city')?.value || '',
                     state: document.getElementById('state')?.value || '',
@@ -1274,7 +1283,56 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     // 1. Save to global orders
                     orderRef.set(orderData)
-                        .then(() => console.log('Order saved:', orderId))
+                        .then(() => {
+                            console.log('Order saved:', orderId);
+                            
+                            // Send order confirmation emails after successful save
+                            if (typeof EMAILJS_SERVICE_ID !== 'undefined' && EMAILJS_SERVICE_ID && EMAILJS_PUBLIC_KEY) {
+                                const productNames = orderData.items.map(i => i.name).join(', ');
+                                const totalQty = orderData.items.reduce((sum, item) => sum + item.quantity, 0);
+                                const emailParams = {
+                                    order_id: orderId,
+                                    customer_name: shippingDetails.name,
+                                    customer_phone: shippingDetails.phone,
+                                    customer_email: shippingDetails.email,
+                                    product_name: productNames,
+                                    quantity: totalQty,
+                                    total_amount: this._orderTotal,
+                                    address: `${shippingDetails.address}, ${shippingDetails.city}, ${shippingDetails.state} - ${shippingDetails.pincode}`,
+                                    payment_status: paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online'
+                                };
+
+                                // CALL 1 - Admin Request
+                                fetch('https://api.emailjs.com/api/v1.0/email/send', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        service_id: EMAILJS_SERVICE_ID,
+                                        template_id: 'template_n4wrqtj',
+                                        user_id: EMAILJS_PUBLIC_KEY,
+                                        template_params: emailParams
+                                    })
+                                }).then(res => {
+                                    if(res.ok) console.log('Admin order notification sent successfully');
+                                    else console.error('Admin email sending failed', res.status);
+                                }).catch(err => console.error('EmailJS admin request failed:', err));
+
+                                // CALL 2 - Customer Confirmation
+                                fetch('https://api.emailjs.com/api/v1.0/email/send', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        service_id: EMAILJS_SERVICE_ID,
+                                        template_id: 'template_6oupid9',
+                                        user_id: EMAILJS_PUBLIC_KEY,
+                                        template_params: emailParams
+                                    })
+                                }).then(res => {
+                                    if(res.ok) console.log('Customer order confirmation sent successfully');
+                                    else console.error('Customer email sending failed', res.status);
+                                }).catch(err => console.error('EmailJS customer request failed:', err));
+                            }
+                        })
                         .catch(err => console.error('Order save failed:', err));
 
                     // 2. Save by phone number (for guest order tracking)
@@ -1300,6 +1358,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Show success
                 const method = paymentMethod === 'COD' ? 'Cash on Delivery' : 'Online Payment';
                 app.showToast(`Order placed successfully via ${method}! 🎉`);
+
 
                 // Redirect to order confirmation / home
                 setTimeout(() => {
