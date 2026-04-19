@@ -17,6 +17,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const EMAILJS_SERVICE_ID = "service_r7f83sg";
     const EMAILJS_TEMPLATE_ID = "template_jlyjy5i";
     const EMAILJS_PUBLIC_KEY = "M2IU4HlY2wh4L6Fc0";
+    // ⬇️ Replace this URL after deploying your Google Apps Script
+    const GOOGLE_SHEETS_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
 
     // Initialize Firebase
     let auth, db;
@@ -716,6 +718,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 grid.innerHTML = productsToRender.map(p => this.createProductCardHTML(p)).join('');
                 app.wishlist.updateAllHeartIcons();
                 app._attachProductCardListeners(grid);
+                this.initRatingsAndShare(grid);
             },
 
             applyFiltersAndSort() {
@@ -827,6 +830,7 @@ document.addEventListener("DOMContentLoaded", () => {
             createProductCardHTML(product) {
                 const isWishlisted = app.wishlist.includes(product.id);
                 const pageUrl = app.getProductPageUrl(product.id);
+                const shareUrl = `https://etremperfumes.com/${pageUrl}`;
                 return `
                     <div class="product-card" data-id="${product.id}">
                         <div class="product-card-image">
@@ -843,14 +847,142 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <span class="current-price">₹${product.price}</span>
                                 ${product.mrp > product.price ? `<span class="original-price">₹${product.mrp}</span>` : ''}
                             </div>
+                            <!-- Star Rating Widget -->
+                            <div class="product-rating" id="rating-${product.id}">
+                                <span class="stars-display">★★★★★</span>
+                                <span class="rating-count">Loading...</span>
+                            </div>
                         </div>
-                        <div class="product-card-actions">
+                        <div class="product-card-actions" style="display:flex;gap:0.5rem;flex-direction:column;">
                             <button class="btn btn-primary btn-block add-to-cart-btn" data-product-id="${product.id}">Add to Cart</button>
+                            <div style="display:flex;gap:0.5rem;align-items:center;justify-content:space-between;">
+                                <!-- Rate this product -->
+                                <div class="stars-input" data-product-id="${product.id}" title="Rate this product">
+                                    <span data-val="1">★</span>
+                                    <span data-val="2">★</span>
+                                    <span data-val="3">★</span>
+                                    <span data-val="4">★</span>
+                                    <span data-val="5">★</span>
+                                </div>
+                                <!-- Share button -->
+                                <div style="position:relative;">
+                                    <button class="share-btn" data-product-id="${product.id}" data-share-url="${shareUrl}" data-name="${product.name}">
+                                        <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+                                        Share
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
             },
-        },
+
+            // Called after renderProducts to attach rating + share interactivity
+            initRatingsAndShare(container) {
+                if (!container) return;
+
+                // ---- STAR RATINGS ----
+                // Load & display ratings from Firebase
+                container.querySelectorAll('.product-rating').forEach(ratingEl => {
+                    const pid = ratingEl.id.replace('rating-', '');
+                    if (db) {
+                        db.ref(`ratings/${pid}`).once('value').then(snap => {
+                            const data = snap.val();
+                            if (data && data.ratingCount > 0) {
+                                const avg = (data.totalStars / data.ratingCount).toFixed(1);
+                                const stars = '★'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg));
+                                ratingEl.innerHTML = `
+                                    <span class="stars-display">${stars}</span>
+                                    <span class="rating-count">★ ${avg} | ${data.ratingCount} rating${data.ratingCount > 1 ? 's' : ''}</span>
+                                `;
+                            } else {
+                                ratingEl.innerHTML = `<span class="rating-count">No ratings yet</span>`;
+                            }
+                        }).catch(() => {
+                            ratingEl.innerHTML = '';
+                        });
+                    } else {
+                        ratingEl.innerHTML = '';
+                    }
+                });
+
+                // Star input: hover + click
+                container.querySelectorAll('.stars-input').forEach(starInput => {
+                    const pid = starInput.dataset.productId;
+                    const stars = starInput.querySelectorAll('span');
+                    const alreadyRated = localStorage.getItem(`etrem_rated_${pid}`);
+
+                    if (alreadyRated) {
+                        starInput.innerHTML = `<span class="rating-submitted">✓ Rated</span>`;
+                        return;
+                    }
+
+                    stars.forEach(star => {
+                        star.addEventListener('mouseenter', () => {
+                            const val = parseInt(star.dataset.val);
+                            stars.forEach((s, i) => s.classList.toggle('hovered', i < val));
+                        });
+                        star.addEventListener('mouseleave', () => {
+                            stars.forEach(s => s.classList.remove('hovered'));
+                        });
+                        star.addEventListener('click', () => {
+                            const rating = parseInt(star.dataset.val);
+                            if (!db) return;
+                            const ref = db.ref(`ratings/${pid}`);
+                            ref.transaction(current => {
+                                if (current) {
+                                    return { totalStars: (current.totalStars || 0) + rating, ratingCount: (current.ratingCount || 0) + 1 };
+                                }
+                                return { totalStars: rating, ratingCount: 1 };
+                            }).then(() => {
+                                localStorage.setItem(`etrem_rated_${pid}`, rating);
+                                starInput.innerHTML = `<span class="rating-submitted">✓ Thanks for rating!</span>`;
+                                app.showToast('Rating submitted! ⭐');
+                                // Refresh the display rating
+                                const displayEl = document.getElementById(`rating-${pid}`);
+                                if (displayEl) {
+                                    ref.once('value').then(snap => {
+                                        const d = snap.val();
+                                        if (d && d.ratingCount > 0) {
+                                            const avg = (d.totalStars / d.ratingCount).toFixed(1);
+                                            const starsStr = '★'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg));
+                                            displayEl.innerHTML = `<span class="stars-display">${starsStr}</span><span class="rating-count">★ ${avg} | ${d.ratingCount} ratings</span>`;
+                                        }
+                                    });
+                                }
+                            }).catch(err => console.error('Rating error:', err));
+                        });
+                    });
+                });
+
+                // ---- SHARE BUTTON ----
+                container.querySelectorAll('.share-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        const url   = btn.dataset.shareUrl;
+                        const name  = btn.dataset.name;
+
+                        if (navigator.share) {
+                            try {
+                                await navigator.share({ title: `ETREM – ${name}`, text: `Check out ${name} by ETREM Perfumes!`, url });
+                            } catch (_) {}
+                        } else {
+                            try {
+                                await navigator.clipboard.writeText(url);
+                                // Show tooltip
+                                const tip = document.createElement('span');
+                                tip.className = 'share-tooltip';
+                                tip.textContent = 'Link Copied!';
+                                btn.parentElement.appendChild(tip);
+                                setTimeout(() => tip.remove(), 2100);
+                            } catch (_) {
+                                app.showToast('Could not copy link.', 'error');
+                            }
+                        }
+                    });
+                });
+            },
+
 
 
         // --- 7. WISHLIST MODULE ---
@@ -1109,6 +1241,43 @@ document.addEventListener("DOMContentLoaded", () => {
                 this._discount = 0;
                 this._couponCode = '';
 
+                // --- CITY DROPDOWN + DYNAMIC SHIPPING ---
+                const citySelect = document.getElementById('city-select');
+                const otherCityGroup = document.getElementById('other-city-group');
+                const cityInput = document.getElementById('city');
+
+                const updateShipping = () => {
+                    const selectedCity = citySelect?.value;
+                    let newShipping;
+
+                    if (selectedCity === 'Surat') {
+                        newShipping = 0;
+                        if (otherCityGroup) otherCityGroup.style.display = 'none';
+                        if (cityInput) cityInput.required = false;
+                        if (shippingEl) {
+                            shippingEl.textContent = 'FREE';
+                            shippingEl.style.color = '#4CAF50';
+                        }
+                    } else if (selectedCity === 'other') {
+                        newShipping = 60;
+                        if (otherCityGroup) otherCityGroup.style.display = 'block';
+                        if (cityInput) cityInput.required = true;
+                        if (shippingEl) {
+                            shippingEl.textContent = '+ \u20b960';
+                            shippingEl.style.color = '';
+                        }
+                    } else {
+                        return; // nothing selected yet
+                    }
+
+                    this._shipping = newShipping;
+                    const newTotal = subtotal - (this._discount || 0) + newShipping;
+                    this._orderTotal = newTotal;
+                    if (totalEl) totalEl.textContent = `\u20b9${newTotal}`;
+                };
+
+                if (citySelect) citySelect.addEventListener('change', updateShipping);
+
                 // --- COUPON CODE SYSTEM ---
                 const couponInput = document.getElementById('coupon-input');
                 const couponBtn = document.getElementById('apply-coupon-btn');
@@ -1161,6 +1330,61 @@ document.addEventListener("DOMContentLoaded", () => {
                     const nameInput = document.getElementById('name');
                     if (nameInput && app.currentUser.displayName) nameInput.value = app.currentUser.displayName;
                 }
+
+                // --- CHECKOUT RECOMMENDATIONS ---
+                this._renderRecommendations();
+            },
+
+            _renderRecommendations() {
+                // Determine cart gender profile
+                const cartIds = app.cart.map(i => i.id);
+                const cartProducts = cartIds.map(id => app.products.find(p => p.id === id)).filter(Boolean);
+
+                // Find dominant gender in cart
+                const genderCount = { Masculine: 0, Feminine: 0, Unisex: 0 };
+                cartProducts.forEach(p => { if (genderCount[p.gender] !== undefined) genderCount[p.gender]++; });
+                const dominantGender = Object.entries(genderCount).sort((a, b) => b[1] - a[1])[0][0];
+
+                // Get candidates: same gender, 50ml, not in cart already
+                const candidates = app.products.filter(p =>
+                    p.gender === dominantGender &&
+                    p.category === 'individual-50ml' &&
+                    !cartIds.includes(p.id)
+                ).slice(0, 3);
+
+                if (candidates.length === 0) return;
+
+                // Inject the recommendations section into checkout layout
+                const main = document.querySelector('.checkout-page .container');
+                if (!main) return;
+
+                const section = document.createElement('div');
+                section.className = 'checkout-recommendations';
+                section.innerHTML = `
+                    <h3 style="margin: 2rem 0 1rem; font-family: 'Playfair Display', serif; color: var(--accent-gold);">You May Also Like</h3>
+                    <div class="rec-grid">
+                        ${candidates.map(p => `
+                            <div class="rec-card">
+                                <img src="./images/${p.images[0]}" alt="${p.name}" onerror="this.src='./images/etrem.webp'">
+                                <div class="rec-info">
+                                    <p class="rec-name">${p.name}</p>
+                                    <p class="rec-price">₹${p.price}</p>
+                                    <button class="btn btn-outline rec-add-btn" data-product-id="${p.id}">+ Add to Cart</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                main.appendChild(section);
+
+                // Attach add-to-cart listeners
+                section.querySelectorAll('.rec-add-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        app.cartManager.add(btn.dataset.productId);
+                        btn.textContent = '✓ Added';
+                        btn.disabled = true;
+                    });
+                });
             },
 
             placeOrder() {
@@ -1180,15 +1404,26 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
+                // Resolve city from dropdown
+                const citySelectVal = document.getElementById('city-select')?.value || '';
+                const cityTextVal   = document.getElementById('city')?.value || '';
+                const resolvedCity  = citySelectVal === 'other' ? cityTextVal : citySelectVal;
+
+                if (!resolvedCity) {
+                    app.showToast('Please select your city.', 'error');
+                    return;
+                }
+
                 // Collect shipping details
                 const shippingDetails = {
-                    name: document.getElementById('name')?.value || '',
-                    email: document.getElementById('email')?.value || '',
-                    phone: cleanPhone,
-                    address: document.getElementById('address')?.value || '',
-                    city: document.getElementById('city')?.value || '',
-                    state: document.getElementById('state')?.value || '',
-                    pincode: document.getElementById('pincode')?.value || ''
+                    name:     document.getElementById('name')?.value || '',
+                    email:    document.getElementById('email')?.value || '',
+                    phone:    cleanPhone,
+                    address:  document.getElementById('address')?.value || '',
+                    city:     resolvedCity,
+                    state:    document.getElementById('state')?.value || '',
+                    pincode:  document.getElementById('pincode')?.value || '',
+                    shippingCharge: this._shipping
                 };
 
                 const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value || 'razorpay';
@@ -1295,18 +1530,26 @@ document.addEventListener("DOMContentLoaded", () => {
                             const CUSTOMER_TEMPLATE = "template_6oupid9";
                             const PUB_KEY = "M2IU4HlY2wh4L6Fc0";
 
-                            const productNames = orderData.items.map(i => i.name).join(', ');
-                            const totalQty = orderData.items.reduce((sum, item) => sum + item.quantity, 0);
+                            // Build per-item product lines (one per item for clarity)
+                            const firstItem = orderData.items[0] || {};
+                            const productLines = orderData.items.map(i =>
+                                `${i.name} (${i.volume || 'N/A'}) x${i.quantity} — ₹${i.price * i.quantity}`
+                            ).join('\n');
+
                             const emailParams = {
-                                order_id: orderId,
-                                customer_name: shippingDetails.name,
-                                customer_phone: shippingDetails.phone,
-                                customer_email: shippingDetails.email,
-                                product_name: productNames,
-                                quantity: totalQty,
-                                total_amount: this._orderTotal,
-                                address: `${shippingDetails.address}, ${shippingDetails.city}, ${shippingDetails.state} - ${shippingDetails.pincode}`,
-                                payment_status: paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online'
+                                order_id:        orderId,
+                                customer_name:   shippingDetails.name,
+                                customer_phone:  shippingDetails.phone,
+                                customer_email:  shippingDetails.email,
+                                product_name:    firstItem.name || '',
+                                product_size:    firstItem.volume || '',
+                                quantity:        firstItem.quantity || 1,
+                                product_details: productLines,
+                                total_amount:    this._orderTotal,
+                                shipping_charge: shippingDetails.shippingCharge || 0,
+                                city:            shippingDetails.city,
+                                address:         `${shippingDetails.address}, ${shippingDetails.city}, ${shippingDetails.state} - ${shippingDetails.pincode}`,
+                                payment_status:  paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online'
                             };
 
                             // CALL 1 - Admin Request
@@ -1338,6 +1581,40 @@ document.addEventListener("DOMContentLoaded", () => {
                                 if(res.ok) console.log('Customer order confirmation sent successfully');
                                 else console.error('Customer email sending failed', res.status);
                             }).catch(err => console.error('EmailJS customer request failed:', err));
+
+                            // --- GOOGLE SHEETS SYNC ---
+                            if (GOOGLE_SHEETS_URL && GOOGLE_SHEETS_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+                                const firstItem = orderData.items[0] || {};
+                                fetch(GOOGLE_SHEETS_URL, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        order_id:        orderId,
+                                        timestamp:       orderData.createdAt,
+                                        name:            shippingDetails.name,
+                                        phone:           shippingDetails.phone,
+                                        email:           shippingDetails.email,
+                                        address:         shippingDetails.address,
+                                        city:            shippingDetails.city,
+                                        state:           shippingDetails.state,
+                                        pincode:         shippingDetails.pincode,
+                                        product_name:    firstItem.name || '',
+                                        product_size:    firstItem.volume || '',
+                                        quantity:        firstItem.quantity || 1,
+                                        product_details: orderData.items.map(i => `${i.name} (${i.volume||'N/A'}) x${i.quantity}`).join('; '),
+                                        subtotal:        orderData.subtotal,
+                                        shipping_charge: shippingDetails.shippingCharge || 0,
+                                        discount:        orderData.discount || 0,
+                                        total_amount:    orderData.total,
+                                        payment_method:  paymentMethod,
+                                        payment_status:  paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online',
+                                        coupon_code:     orderData.couponCode || ''
+                                    })
+                                }).then(res => {
+                                    if(res.ok) console.log('Order synced to Google Sheets ✅');
+                                    else console.error('Google Sheets sync failed', res.status);
+                                }).catch(err => console.error('Google Sheets sync error:', err));
+                            }
                         })
                         .catch(err => console.error('Order save failed:', err));
 
