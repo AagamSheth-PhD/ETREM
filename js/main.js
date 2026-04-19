@@ -1250,6 +1250,7 @@ document.addEventListener("DOMContentLoaded", () => {
             },
 
             _saveOrder(shippingDetails, paymentMethod, paymentId) {
+                console.log("_saveOrder called, email will be sent");
                 const orderData = {
                     items: app.cart.map(item => {
                         const product = app.products.find(p => p.id === item.id);
@@ -1287,51 +1288,55 @@ document.addEventListener("DOMContentLoaded", () => {
                             console.log('Order saved:', orderId);
                             
                             // Send order confirmation emails after successful save
-                            if (typeof EMAILJS_SERVICE_ID !== 'undefined' && EMAILJS_SERVICE_ID && EMAILJS_PUBLIC_KEY) {
-                                const productNames = orderData.items.map(i => i.name).join(', ');
-                                const totalQty = orderData.items.reduce((sum, item) => sum + item.quantity, 0);
-                                const emailParams = {
-                                    order_id: orderId,
-                                    customer_name: shippingDetails.name,
-                                    customer_phone: shippingDetails.phone,
-                                    customer_email: shippingDetails.email,
-                                    product_name: productNames,
-                                    quantity: totalQty,
-                                    total_amount: this._orderTotal,
-                                    address: `${shippingDetails.address}, ${shippingDetails.city}, ${shippingDetails.state} - ${shippingDetails.pincode}`,
-                                    payment_status: paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online'
-                                };
+                            console.log("EmailJS check:", typeof EMAILJS_SERVICE_ID, EMAILJS_SERVICE_ID, EMAILJS_PUBLIC_KEY);
+                            const SERVICE_ID = "service_r7f83sg";
+                            const ADMIN_TEMPLATE = "template_n4wrqtj";
+                            const CUSTOMER_TEMPLATE = "template_6oupid9";
+                            const PUB_KEY = "M2IU4HlY2wh4L6Fc0";
 
-                                // CALL 1 - Admin Request
-                                fetch('https://api.emailjs.com/api/v1.0/email/send', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        service_id: EMAILJS_SERVICE_ID,
-                                        template_id: 'template_n4wrqtj',
-                                        user_id: EMAILJS_PUBLIC_KEY,
-                                        template_params: emailParams
-                                    })
-                                }).then(res => {
-                                    if(res.ok) console.log('Admin order notification sent successfully');
-                                    else console.error('Admin email sending failed', res.status);
-                                }).catch(err => console.error('EmailJS admin request failed:', err));
+                            const productNames = orderData.items.map(i => i.name).join(', ');
+                            const totalQty = orderData.items.reduce((sum, item) => sum + item.quantity, 0);
+                            const emailParams = {
+                                order_id: orderId,
+                                customer_name: shippingDetails.name,
+                                customer_phone: shippingDetails.phone,
+                                customer_email: shippingDetails.email,
+                                product_name: productNames,
+                                quantity: totalQty,
+                                total_amount: this._orderTotal,
+                                address: `${shippingDetails.address}, ${shippingDetails.city}, ${shippingDetails.state} - ${shippingDetails.pincode}`,
+                                payment_status: paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online'
+                            };
 
-                                // CALL 2 - Customer Confirmation
-                                fetch('https://api.emailjs.com/api/v1.0/email/send', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        service_id: EMAILJS_SERVICE_ID,
-                                        template_id: 'template_6oupid9',
-                                        user_id: EMAILJS_PUBLIC_KEY,
-                                        template_params: emailParams
-                                    })
-                                }).then(res => {
-                                    if(res.ok) console.log('Customer order confirmation sent successfully');
-                                    else console.error('Customer email sending failed', res.status);
-                                }).catch(err => console.error('EmailJS customer request failed:', err));
-                            }
+                            // CALL 1 - Admin Request
+                            fetch('https://api.emailjs.com/api/v1.0/email/send', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    service_id: SERVICE_ID,
+                                    template_id: ADMIN_TEMPLATE,
+                                    user_id: PUB_KEY,
+                                    template_params: emailParams
+                                })
+                            }).then(res => {
+                                if(res.ok) console.log('Admin order notification sent successfully');
+                                else console.error('Admin email sending failed', res.status);
+                            }).catch(err => console.error('EmailJS admin request failed:', err));
+
+                            // CALL 2 - Customer Confirmation
+                            fetch('https://api.emailjs.com/api/v1.0/email/send', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    service_id: SERVICE_ID,
+                                    template_id: CUSTOMER_TEMPLATE,
+                                    user_id: PUB_KEY,
+                                    template_params: emailParams
+                                })
+                            }).then(res => {
+                                if(res.ok) console.log('Customer order confirmation sent successfully');
+                                else console.error('Customer email sending failed', res.status);
+                            }).catch(err => console.error('EmailJS customer request failed:', err));
                         })
                         .catch(err => console.error('Order save failed:', err));
 
