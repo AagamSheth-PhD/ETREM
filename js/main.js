@@ -1952,13 +1952,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     itemsEl.innerHTML = items.length
                         ? items.map(item => `<li>${item.name} (${item.volume || 'N/A'}) × ${item.quantity} — ₹${item.lineTotal || 0}</li>`).join('')
                         : '<li>No item details available.</li>';
+                    sessionStorage.removeItem('etremLastOrder');
                 } catch (_) {
                     orderIdEl.textContent = 'Not available';
                     itemsEl.innerHTML = '<li>Could not load order details.</li>';
                     totalEl.textContent = '₹0';
                     deliveryEl.textContent = '5-7 business days';
-                } finally {
-                    sessionStorage.removeItem('etremLastOrder');
                 }
             }
         },
