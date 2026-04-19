@@ -14,9 +14,9 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const RAZORPAY_KEY_ID = "rzp_live_SeyxOn5i0PuGaO";
-    const EMAILJS_SERVICE_ID = "YOUR_EMAILJS_SERVICE_ID_HERE";
-    const EMAILJS_TEMPLATE_ID = "YOUR_EMAILJS_TEMPLATE_ID_HERE";
-    const EMAILJS_PUBLIC_KEY = "YOUR_EMAILJS_PUBLIC_KEY_HERE";
+    const EMAILJS_SERVICE_ID = "service_r7f83sg";
+    const EMAILJS_TEMPLATE_ID = "template_jlyjy5i";
+    const EMAILJS_PUBLIC_KEY = "M2IU4HlY2wh4L6Fc0";
 
     // Initialize Firebase
     let auth, db;
