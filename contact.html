@@ -71,5 +71,66 @@
     <div id="toast-container"></div>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="./js/main.js" defer></script>
+    <script>
+        // Contact Form — EmailJS Handler
+        document.addEventListener('DOMContentLoaded', function () {
+            emailjs.init("M2IU4HlY2wh4L6Fc0");
+
+            const contactForm = document.getElementById('contact-form');
+            if (!contactForm) return;
+
+            contactForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const btn = contactForm.querySelector('button[type="submit"]');
+                btn.textContent = 'Sending...';
+                btn.disabled = true;
+
+                const name    = document.getElementById('name')?.value || '';
+                const email   = document.getElementById('email')?.value || '';
+                const message = document.getElementById('message')?.value || '';
+
+                fetch('https://api.emailjs.com/api/v1.0/email/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        service_id:  'service_r7f83sg',
+                        template_id: 'template_jlyjy5i',
+                        user_id:     'M2IU4HlY2wh4L6Fc0',
+                        template_params: {
+                            from_name:    name,
+                            from_email:   email,
+                            message:      message,
+                            reply_to:     email
+                        }
+                    })
+                })
+                .then(res => {
+                    if (res.ok) {
+                        console.log('Contact email sent successfully');
+                        contactForm.reset();
+                        btn.textContent = 'Message Sent ✓';
+                        // Show toast if available
+                        if (typeof app !== 'undefined' && app.showToast) {
+                            app.showToast('Message sent! We\'ll reply within 24 hours. 📧');
+                        } else {
+                            alert('Message sent! We\'ll reply within 24 hours.');
+                        }
+                    } else {
+                        throw new Error('EmailJS response: ' + res.status);
+                    }
+                })
+                .catch(err => {
+                    console.error('Contact form email failed:', err);
+                    btn.textContent = 'Send Message';
+                    btn.disabled = false;
+                    if (typeof app !== 'undefined' && app.showToast) {
+                        app.showToast('Failed to send message. Please email us directly at etrem.perfumes@gmail.com', 'error');
+                    } else {
+                        alert('Failed to send. Please email etrem.perfumes@gmail.com directly.');
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>
