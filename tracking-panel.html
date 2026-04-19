@@ -159,7 +159,7 @@
         const PANEL_PASSWORD = "etrem2024owner"; // Change this password!
         const EMAILJS_SERVICE_ID  = "service_r7f83sg";
         const EMAILJS_PUBLIC_KEY  = "M2IU4HlY2wh4L6Fc0";
-        const TRACKING_TEMPLATE   = "template_tracking01"; // Create this template in EmailJS
+        const TRACKING_TEMPLATE   = "template_6oupid9"; // Customer template — for tracking emails
 
         // ---- LOCK / UNLOCK ----
         const lockScreen = document.getElementById('lock-screen');
@@ -206,14 +206,12 @@
             status.textContent = '';
             status.className = 'status-msg';
 
-            const params = {
-                customer_email:     document.getElementById('t-customer-email').value.trim(),
-                customer_name:      document.getElementById('t-customer-name').value.trim(),
-                order_id:           document.getElementById('t-order-id').value.trim(),
-                courier_partner:    document.getElementById('t-courier').value,
-                tracking_link:      document.getElementById('t-tracking-link').value.trim(),
-                estimated_delivery: document.getElementById('t-estimated-delivery').value.trim() || 'Within 5–7 business days'
-            };
+            const customerEmail     = document.getElementById('t-customer-email').value.trim();
+            const customerName      = document.getElementById('t-customer-name').value.trim();
+            const orderId           = document.getElementById('t-order-id').value.trim();
+            const courierPartner    = document.getElementById('t-courier').value;
+            const trackingLink      = document.getElementById('t-tracking-link').value.trim();
+            const estimatedDelivery = document.getElementById('t-estimated-delivery').value.trim() || 'Within 5–7 business days';
 
             try {
                 const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
@@ -223,14 +221,37 @@
                         service_id:  EMAILJS_SERVICE_ID,
                         template_id: TRACKING_TEMPLATE,
                         user_id:     EMAILJS_PUBLIC_KEY,
-                        template_params: params
+                        template_params: {
+                            email_subject: `Your ETREM Order #${orderId} is on its way! 📦`,
+                            to_name:       customerName,
+                            message_body:
+`Hi ${customerName},
+
+Great news! Your ETREM order has been shipped. 🚀
+
+Order ID: ${orderId}
+Courier Partner: ${courierPartner}
+Estimated Delivery: ${estimatedDelivery}
+
+Track your shipment here:
+${trackingLink}
+
+If you have any questions, feel free to reach out:
+📧 etrem.perfumes@gmail.com
+📞 +91 7069122218
+
+Thank you for choosing ETREM – The Naked Perfume. 🖤
+
+Warm regards,
+Team ETREM`
+                        }
                     })
                 });
 
                 if (res.ok) {
-                    status.textContent = `✅ Tracking email sent to ${params.customer_email}`;
+                    status.textContent = `✅ Tracking email sent to ${customerEmail}`;
                     status.className = 'status-msg success';
-                    console.log('Tracking email sent:', params.order_id);
+                    console.log('Tracking email sent:', orderId);
                     document.getElementById('tracking-form').reset();
                 } else {
                     throw new Error('Response: ' + res.status);
