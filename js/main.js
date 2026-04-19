@@ -450,22 +450,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 addToCartPDP.addEventListener('click', () => {
                     const productData = page.dataset.productId;
                     const quantity = parseInt(qtyInput ? qtyInput.value : 1);
-                    const volume = document.querySelector('.volume-btn.active')?.dataset.volume || '';
+                    const rawVolume = document.querySelector('.volume-btn.active')?.dataset.volume || '';
 
                     // Check if the data-product-id is already a valid product ID
                     // (combo and trial pages use the full ID directly)
                     const directMatch = app.products.find(p => p.id === productData);
                     if (directMatch) {
-                        app.cartManager.add(productData, quantity, volume);
+                        app.cartManager.add(productData, quantity, rawVolume);
                         return;
                     }
 
                     // For individual perfume pages with volume selectors
-                    const selectedVolume = volume || '50ml';
+                    const selectedVolume = rawVolume || '50ml';
                     const volumeSuffix = selectedVolume === '20ml' ? '-20' : '-50';
                     const productId = productData + volumeSuffix;
 
-                    app.cartManager.add(productId, quantity, volume);
+                    app.cartManager.add(productId, quantity, rawVolume);
                 });
             }
 
