@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETREM – Owner Tracking Panel</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="./css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --accent-gold: #d4a843; --bg-dark: #0d0d0d; --surface: rgba(255,255,255,0.05); --border: rgba(212,168,67,0.25); }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg-dark); color: #fff; font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+
+        /* ---- Lock Screen ---- */
+        #lock-screen {
+            width: 100%;
+            max-width: 400px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2.5rem;
+            text-align: center;
+        }
+        #lock-screen h1 { font-family: 'Playfair Display', serif; color: var(--accent-gold); font-size: 1.8rem; margin-bottom: 0.5rem; }
+        #lock-screen p { color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-bottom: 1.5rem; }
+        .lock-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+
+        /* ---- Panel ---- */
+        #panel { display: none; width: 100%; max-width: 600px; padding: 2rem; }
+        .panel-header { text-align: center; margin-bottom: 2rem; }
+        .panel-header h1 { font-family: 'Playfair Display', serif; color: var(--accent-gold); font-size: 2rem; }
+        .panel-header p { color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-top: 0.3rem; }
+
+        .panel-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-size: 0.8rem; font-weight: 600; letter-spacing: 1px; color: var(--accent-gold); margin-bottom: 0.4rem; text-transform: uppercase; }
+        .form-group input, .form-group select {
+            width: 100%;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.95rem;
+            padding: 0.75rem 1rem;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent-gold); }
+        .form-group input::placeholder { color: rgba(255,255,255,0.3); }
+
+        .btn-panel {
+            width: 100%;
+            padding: 0.9rem;
+            background: var(--accent-gold);
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            margin-top: 0.5rem;
+        }
+        .btn-panel:hover { opacity: 0.9; }
+        .btn-panel:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .status-msg { text-align: center; margin-top: 1rem; font-size: 0.85rem; min-height: 1.2rem; }
+        .status-msg.success { color: #4CAF50; }
+        .status-msg.error { color: #f44336; }
+
+        .lock-error { color: #f44336; font-size: 0.8rem; margin-top: 0.5rem; display: none; }
+        .divider { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 1.5rem 0; }
+        .logout-btn { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); border-radius: 4px; padding: 0.4rem 0.8rem; font-size: 0.75rem; cursor: pointer; margin-top: 1rem; float: right; }
+        .logout-btn:hover { border-color: #f44336; color: #f44336; }
+    </style>
+</head>
+<body>
+
+    <!-- PASSWORD LOCK SCREEN -->
+    <div id="lock-screen">
+        <div class="lock-icon">🔐</div>
+        <h1>ETREM</h1>
+        <p>Owner Tracking Panel — Private Access</p>
+        <div class="form-group">
+            <label for="pw-input">Password</label>
+            <input type="password" id="pw-input" placeholder="Enter panel password" autocomplete="current-password">
+        </div>
+        <button class="btn-panel" id="unlock-btn">Unlock Panel</button>
+        <p class="lock-error" id="lock-error">❌ Incorrect password. Try again.</p>
+    </div>
+
+    <!-- MAIN PANEL -->
+    <div id="panel">
+        <div class="panel-header">
+            <h1>📦 Tracking Panel</h1>
+            <p>Send a branded tracking email to a customer</p>
+        </div>
+
+        <div class="panel-card">
+            <form id="tracking-form">
+                <div class="form-group">
+                    <label for="t-customer-email">Customer Email *</label>
+                    <input type="email" id="t-customer-email" placeholder="customer@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="t-customer-name">Customer Name *</label>
+                    <input type="text" id="t-customer-name" placeholder="e.g. Rahul Shah" required>
+                </div>
+                <div class="form-group">
+                    <label for="t-order-id">Order ID *</label>
+                    <input type="text" id="t-order-id" placeholder="e.g. -OLSfxQ..." required>
+                </div>
+                <div class="form-group">
+                    <label for="t-courier">Courier Partner</label>
+                    <select id="t-courier">
+                        <option value="Delhivery">Delhivery</option>
+                        <option value="DTDC">DTDC</option>
+                        <option value="Blue Dart">Blue Dart</option>
+                        <option value="India Post">India Post</option>
+                        <option value="Ecom Express">Ecom Express</option>
+                        <option value="Xpressbees">Xpressbees</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="t-tracking-link">Tracking Link *</label>
+                    <input type="url" id="t-tracking-link" placeholder="https://www.delhivery.com/track/..." required>
+                </div>
+                <div class="form-group">
+                    <label for="t-estimated-delivery">Estimated Delivery</label>
+                    <input type="text" id="t-estimated-delivery" placeholder="e.g. 2–4 business days">
+                </div>
+
+                <hr class="divider">
+
+                <button type="submit" class="btn-panel" id="send-tracking-btn">📧 Send Tracking Email</button>
+                <p class="status-msg" id="tracking-status"></p>
+            </form>
+        </div>
+
+        <div style="text-align:right;">
+            <button class="logout-btn" id="logout-btn">🔒 Lock Panel</button>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <script>
+        // ---- CONFIG ----
+        const PANEL_PASSWORD = "etrem2024owner"; // Change this password!
+        const EMAILJS_SERVICE_ID  = "service_r7f83sg";
+        const EMAILJS_PUBLIC_KEY  = "M2IU4HlY2wh4L6Fc0";
+        const TRACKING_TEMPLATE   = "template_tracking01"; // Create this template in EmailJS
+
+        // ---- LOCK / UNLOCK ----
+        const lockScreen = document.getElementById('lock-screen');
+        const panel      = document.getElementById('panel');
+        const lockError  = document.getElementById('lock-error');
+
+        // Auto-unlock if session is active
+        if (sessionStorage.getItem('etrem_panel_unlocked')) {
+            lockScreen.style.display = 'none';
+            panel.style.display = 'block';
+        }
+
+        document.getElementById('unlock-btn').addEventListener('click', () => {
+            const pw = document.getElementById('pw-input').value;
+            if (pw === PANEL_PASSWORD) {
+                sessionStorage.setItem('etrem_panel_unlocked', '1');
+                lockScreen.style.display = 'none';
+                panel.style.display = 'block';
+                lockError.style.display = 'none';
+            } else {
+                lockError.style.display = 'block';
+                document.getElementById('pw-input').value = '';
+                document.getElementById('pw-input').focus();
+            }
+        });
+
+        document.getElementById('pw-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') document.getElementById('unlock-btn').click();
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            sessionStorage.removeItem('etrem_panel_unlocked');
+            lockScreen.style.display = 'flex';
+            panel.style.display = 'none';
+        });
+
+        // ---- SEND TRACKING EMAIL ----
+        document.getElementById('tracking-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn    = document.getElementById('send-tracking-btn');
+            const status = document.getElementById('tracking-status');
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+            status.textContent = '';
+            status.className = 'status-msg';
+
+            const params = {
+                customer_email:     document.getElementById('t-customer-email').value.trim(),
+                customer_name:      document.getElementById('t-customer-name').value.trim(),
+                order_id:           document.getElementById('t-order-id').value.trim(),
+                courier_partner:    document.getElementById('t-courier').value,
+                tracking_link:      document.getElementById('t-tracking-link').value.trim(),
+                estimated_delivery: document.getElementById('t-estimated-delivery').value.trim() || 'Within 5–7 business days'
+            };
+
+            try {
+                const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        service_id:  EMAILJS_SERVICE_ID,
+                        template_id: TRACKING_TEMPLATE,
+                        user_id:     EMAILJS_PUBLIC_KEY,
+                        template_params: params
+                    })
+                });
+
+                if (res.ok) {
+                    status.textContent = `✅ Tracking email sent to ${params.customer_email}`;
+                    status.className = 'status-msg success';
+                    console.log('Tracking email sent:', params.order_id);
+                    document.getElementById('tracking-form').reset();
+                } else {
+                    throw new Error('Response: ' + res.status);
+                }
+            } catch (err) {
+                status.textContent = '❌ Failed to send. Check console for details.';
+                status.className = 'status-msg error';
+                console.error('Tracking email error:', err);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📧 Send Tracking Email';
+            }
+        });
+    </script>
+</body>
+</html>
