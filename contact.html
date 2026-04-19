@@ -94,13 +94,22 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         service_id:  'service_r7f83sg',
-                        template_id: 'template_jlyjy5i',
+                        template_id: 'template_6oupid9',
                         user_id:     'M2IU4HlY2wh4L6Fc0',
                         template_params: {
-                            from_name:    name,
-                            from_email:   email,
-                            message:      message,
-                            reply_to:     email
+                            email_subject: `New Inquiry from ${name} – ETREM Contact Form`,
+                            to_name:       'ETREM Team',
+                            message_body:
+`New inquiry received via etremperfumes.com contact form.
+
+From: ${name}
+Email: ${email}
+
+Message:
+${message}
+
+---
+Reply directly to: ${email}`
                         }
                     })
                 })
