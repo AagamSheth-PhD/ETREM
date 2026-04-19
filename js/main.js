@@ -140,6 +140,109 @@ document.addEventListener("DOMContentLoaded", () => {
             }, 3000);
         },
 
+        deriveVolumeFromProductId(productId = '') {
+            if (typeof productId !== 'string') return '';
+            if (productId.endsWith('-20') || productId.endsWith('-20ml')) return '20ml';
+            if (productId.endsWith('-50') || productId.endsWith('-50ml')) return '50ml';
+            return '';
+        },
+
+        normalizeVolume(productId, volume = '') {
+            const cleanVolume = String(volume || '').trim();
+            return cleanVolume || this.deriveVolumeFromProductId(productId);
+        },
+
+        copyTextToClipboard(text) {
+            if (!text) return Promise.reject(new Error('Nothing to copy'));
+            if (navigator.clipboard && window.isSecureContext) {
+                return navigator.clipboard.writeText(text);
+            }
+
+            return new Promise((resolve, reject) => {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.setAttribute('readonly', '');
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    const copied = document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    if (copied) resolve();
+                    else reject(new Error('Copy command failed'));
+                } catch (err) {
+                    document.body.removeChild(textarea);
+                    reject(err);
+                }
+            });
+        },
+
+        buildOrderItemDetails(items = []) {
+            const safeItems = Array.isArray(items) ? items : [];
+            const productDetailsLines = safeItems.map(i => {
+                const volumeLabel = i.volume || this.deriveVolumeFromProductId(i.id) || 'N/A';
+                const quantity = Number(i.quantity) > 0 ? Number(i.quantity) : 1;
+                const price = Number(i.price) > 0 ? Number(i.price) : 0;
+                const lineTotal = price * quantity;
+                return `${i.name} (${volumeLabel}) x${quantity} — ₹${lineTotal}`;
+            });
+            const totalQuantity = safeItems.reduce((sum, i) => sum + (Number(i.quantity) > 0 ? Number(i.quantity) : 1), 0);
+            const itemCount = safeItems.length;
+            const uniqueNames = [...new Set(safeItems.map(i => i.name).filter(Boolean))];
+            const productSummary = uniqueNames.join(', ');
+            const sizeList = [...new Set(safeItems.map(i => i.volume || this.deriveVolumeFromProductId(i.id)).filter(Boolean))].join(', ');
+            const firstItem = safeItems[0] || {};
+
+            return {
+                productDetails: productDetailsLines.join('\n'),
+                totalQuantity,
+                itemCount,
+                productSummary,
+                productName: itemCount > 1 ? 'Multiple Items' : (firstItem.name || ''),
+                productSize: itemCount > 1 ? 'See details below' : (firstItem.volume || this.deriveVolumeFromProductId(firstItem.id) || ''),
+                sizeList
+            };
+        },
+
+        initProductPageRating(page) {
+            if (!page || !db) return;
+            const productData = page.dataset.productId || '';
+            const directMatch = this.products.find(p => p.id === productData);
+            const activeVolume = document.querySelector('.volume-btn.active')?.dataset.volume || '';
+            const fallbackVolume = directMatch ? '' : (activeVolume || '50ml');
+            const volumeSuffix = fallbackVolume === '20ml' ? '-20' : '-50';
+            const ratingProductId = directMatch ? productData : `${productData}${volumeSuffix}`;
+            if (!ratingProductId) return;
+
+            const productInfo = page.querySelector('.product-info');
+            if (!productInfo || productInfo.querySelector('.pdp-rating-widget')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'pdp-rating-widget';
+            wrapper.style.margin = '0.9rem 0 1.2rem';
+            wrapper.innerHTML = `
+                <div class="product-rating" id="rating-${ratingProductId}">
+                    <span class="rating-count">Loading ratings...</span>
+                </div>
+                <div class="stars-input" data-product-id="${ratingProductId}" title="Rate this product" style="margin-top:0.45rem;">
+                    <span data-val="1">★</span>
+                    <span data-val="2">★</span>
+                    <span data-val="3">★</span>
+                    <span data-val="4">★</span>
+                    <span data-val="5">★</span>
+                </div>
+            `;
+            const heading = productInfo.querySelector('h1');
+            if (heading?.nextSibling) {
+                heading.parentNode.insertBefore(wrapper, heading.nextSibling);
+            } else {
+                productInfo.appendChild(wrapper);
+            }
+
+            this.shop.initRatingsAndShare(wrapper);
+        },
+
         // --- 3. RENDER HEADER & FOOTER ---
         renderSharedComponents() {
             // ---- HEADER ----
@@ -512,16 +615,22 @@ document.addEventListener("DOMContentLoaded", () => {
             // Share button
             const shareBtn = page.querySelector('.share-btn');
             if (shareBtn) {
-                shareBtn.addEventListener('click', () => {
+                shareBtn.addEventListener('click', async () => {
                     if (navigator.share) {
-                        navigator.share({ title: document.title, url: window.location.href });
+                        try {
+                            await navigator.share({ title: document.title, url: window.location.href });
+                        } catch (_) {}
                     } else {
-                        navigator.clipboard.writeText(window.location.href).then(() => {
+                        this.copyTextToClipboard(window.location.href).then(() => {
                             this.showToast('Link copied to clipboard!');
+                        }).catch(() => {
+                            this.showToast('Unable to copy link. Please check browser permissions or copy from the address bar.', 'error');
                         });
                     }
                 });
             }
+
+            this.initProductPageRating(page);
         },
 
         initShopPage() {
@@ -532,9 +641,20 @@ document.addEventListener("DOMContentLoaded", () => {
         init() {
             this.cart = JSON.parse(localStorage.getItem('etremCart')) || [];
 
-            // Clean up stale/invalid cart items that don't match any product
-            const validCart = this.cart.filter(item => this.products.some(p => p.id === item.id));
-            if (validCart.length !== this.cart.length) {
+            // Clean up stale/invalid cart items and normalize volume fallback
+            const validCart = this.cart
+                .filter(item => this.products.some(p => p.id === item.id))
+                .map(item => ({
+                    ...item,
+                    volume: this.normalizeVolume(item.id, item.volume)
+                }));
+            const cartChanged = validCart.length !== this.cart.length ||
+                validCart.some((item, idx) =>
+                    item.id !== this.cart[idx]?.id ||
+                    item.quantity !== this.cart[idx]?.quantity ||
+                    item.volume !== this.cart[idx]?.volume
+                );
+            if (cartChanged) {
                 this.cart = validCart;
                 localStorage.setItem('etremCart', JSON.stringify(this.cart));
             }
@@ -552,6 +672,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (document.querySelector('.checkout-page')) this.checkout.initCheckoutPage();
             if (document.querySelector('.quiz-page')) this.quiz.init();
             if (document.querySelector('.profile-page')) this.profileManager.initProfilePage();
+            if (document.querySelector('.order-success-page')) this.orderSuccess.initOrderSuccessPage();
 
             this.cartManager.updateCartCount();
         },
@@ -833,6 +954,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const isWishlisted = app.wishlist.includes(product.id);
                 const pageUrl = app.getProductPageUrl(product.id);
                 const shareUrl = `https://etremperfumes.com/${pageUrl}`;
+                const derivedVolume = app.deriveVolumeFromProductId(product.id);
                 return `
                     <div class="product-card" data-id="${product.id}">
                         <div class="product-card-image">
@@ -856,7 +978,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             </div>
                         </div>
                         <div class="product-card-actions" style="display:flex;gap:0.5rem;flex-direction:column;">
-                            <button class="btn btn-primary btn-block add-to-cart-btn" data-product-id="${product.id}">Add to Cart</button>
+                            <button class="btn btn-primary btn-block add-to-cart-btn" data-product-id="${product.id}" data-volume="${derivedVolume}">Add to Cart</button>
                             <div style="display:flex;gap:0.5rem;align-items:center;justify-content:space-between;">
                                 <!-- Rate this product -->
                                 <div class="stars-input" data-product-id="${product.id}" title="Rate this product">
@@ -890,12 +1012,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (db) {
                         db.ref(`ratings/${pid}`).once('value').then(snap => {
                             const data = snap.val();
-                            if (data && data.ratingCount > 0) {
-                                const avg = (data.totalStars / data.ratingCount).toFixed(1);
-                                const stars = '★'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg));
+                            const ratingCount = Number(data?.ratingCount) || 0;
+                            const totalStars = Number(data?.totalStars) || 0;
+                            const average = ratingCount > 0 ? totalStars / ratingCount : 0;
+                            if (ratingCount > 0 && Number.isFinite(average)) {
+                                const avg = average.toFixed(1);
+                                const stars = '★'.repeat(Math.round(average)) + '☆'.repeat(5 - Math.round(average));
                                 ratingEl.innerHTML = `
                                     <span class="stars-display">${stars}</span>
-                                    <span class="rating-count">★ ${avg} | ${data.ratingCount} rating${data.ratingCount > 1 ? 's' : ''}</span>
+                                    <span class="rating-count">★ ${avg} | ${ratingCount} rating${ratingCount > 1 ? 's' : ''}</span>
                                 `;
                             } else {
                                 ratingEl.innerHTML = `<span class="rating-count">No ratings yet</span>`;
@@ -945,14 +1070,19 @@ document.addEventListener("DOMContentLoaded", () => {
                                 if (displayEl) {
                                     ref.once('value').then(snap => {
                                         const d = snap.val();
-                                        if (d && d.ratingCount > 0) {
-                                            const avg = (d.totalStars / d.ratingCount).toFixed(1);
-                                            const starsStr = '★'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg));
-                                            displayEl.innerHTML = `<span class="stars-display">${starsStr}</span><span class="rating-count">★ ${avg} | ${d.ratingCount} ratings</span>`;
+                                        const ratingCount = Number(d?.ratingCount) || 0;
+                                        const totalStars = Number(d?.totalStars) || 0;
+                                        const average = ratingCount > 0 ? totalStars / ratingCount : 0;
+                                        if (ratingCount > 0 && Number.isFinite(average)) {
+                                            const avg = average.toFixed(1);
+                                            const starsStr = '★'.repeat(Math.round(average)) + '☆'.repeat(5 - Math.round(average));
+                                            displayEl.innerHTML = `<span class="stars-display">${starsStr}</span><span class="rating-count">★ ${avg} | ${ratingCount} rating${ratingCount > 1 ? 's' : ''}</span>`;
                                         }
                                     });
                                 }
-                            }).catch(err => console.error('Rating error:', err));
+                            }).catch(() => {
+                                app.showToast('Could not submit rating right now.', 'error');
+                            });
                         });
                     });
                 });
@@ -970,7 +1100,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             } catch (_) {}
                         } else {
                             try {
-                                await navigator.clipboard.writeText(url);
+                                await app.copyTextToClipboard(url);
                                 // Show tooltip
                                 const tip = document.createElement('span');
                                 tip.className = 'share-tooltip';
@@ -978,7 +1108,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 btn.parentElement.appendChild(tip);
                                 setTimeout(() => tip.remove(), 2100);
                             } catch (_) {
-                                app.showToast('Could not copy link.', 'error');
+                                app.showToast('Unable to copy link. Please check browser permissions or copy from the address bar.', 'error');
                             }
                         }
                     });
@@ -1088,15 +1218,17 @@ document.addEventListener("DOMContentLoaded", () => {
             add(productId, quantity = 1, volume = '') {
                 const product = app.products.find(p => p.id === productId);
                 if (!product) {
-                    console.warn("Product not found:", productId);
+                    app.showToast('The selected product is currently unavailable. Please browse other fragrances or contact support.', "error");
                     return;
                 }
+                const normalizedVolume = app.normalizeVolume(productId, volume);
 
                 const existingItem = app.cart.find(item => item.id === productId);
                 if (existingItem) {
                     existingItem.quantity += quantity;
+                    existingItem.volume = app.normalizeVolume(productId, existingItem.volume);
                 } else {
-                    app.cart.push({ id: productId, quantity, volume });
+                    app.cart.push({ id: productId, quantity, volume: normalizedVolume });
                 }
                 this.save();
                 app.showToast(`${product.name} added to cart!`);
@@ -1256,17 +1388,20 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (selectedCity === 'Surat') {
                         newShipping = 0;
                         if (otherCityGroup) otherCityGroup.style.display = 'none';
-                        if (cityInput) cityInput.required = false;
+                        if (cityInput) {
+                            cityInput.required = false;
+                            cityInput.value = '';
+                        }
                         if (shippingEl) {
                             shippingEl.textContent = 'FREE';
                             shippingEl.style.color = '#4CAF50';
                         }
                     } else if (selectedCity === 'other') {
-                        newShipping = 60;
+                        newShipping = this.SHIPPING_COST;
                         if (otherCityGroup) otherCityGroup.style.display = 'block';
                         if (cityInput) cityInput.required = true;
                         if (shippingEl) {
-                            shippingEl.textContent = '+ \u20b960';
+                            shippingEl.textContent = `+ \u20b9${this.SHIPPING_COST}`;
                             shippingEl.style.color = '';
                         }
                     } else {
@@ -1293,7 +1428,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         const code = couponInput.value.trim().toUpperCase();
                         if (code === 'FNF25') {
                             discount = Math.round(subtotal * 0.25);
-                            grandTotal = subtotal - discount + shipping;
+                            grandTotal = subtotal - discount + this._shipping;
                             this._discount = discount;
                             this._orderTotal = grandTotal;
                             this._couponCode = 'FNF25';
@@ -1489,7 +1624,6 @@ document.addEventListener("DOMContentLoaded", () => {
             },
 
             _saveOrder(shippingDetails, paymentMethod, paymentId) {
-                console.log("_saveOrder called, email will be sent");
                 const orderData = {
                     items: app.cart.map(item => {
                         const product = app.products.find(p => p.id === item.id);
@@ -1498,7 +1632,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             name: product ? product.name : item.id,
                             price: product ? product.price : 0,
                             quantity: item.quantity,
-                            volume: item.volume || ''
+                            volume: app.normalizeVolume(item.id, item.volume)
                         };
                     }),
                     subtotal: this._subtotal,
@@ -1515,39 +1649,53 @@ document.addEventListener("DOMContentLoaded", () => {
                     phone: shippingDetails.phone || ''
                 };
 
+                const orderLineData = app.buildOrderItemDetails(orderData.items);
+                const generatedOrderId = `ETREM-${Date.now()}`;
+                let resolvedOrderId = generatedOrderId;
+                if (db) {
+                    const orderRefPreview = db.ref('orders').push();
+                    resolvedOrderId = orderRefPreview.key || generatedOrderId;
+                }
+                orderData.orderId = resolvedOrderId;
+
+                const orderSuccessPayload = {
+                    orderId: resolvedOrderId,
+                    createdAt: orderData.createdAt,
+                    total: orderData.total,
+                    estimatedDelivery: '5-7 business days',
+                    items: orderData.items.map(item => ({
+                        name: item.name,
+                        quantity: item.quantity,
+                        volume: item.volume,
+                        lineTotal: item.price * item.quantity
+                    }))
+                };
+
                 // Save to Firebase if available
                 if (db) {
-                    const orderRef = db.ref('orders').push();
-                    const orderId = orderRef.key;
-                    orderData.orderId = orderId;
+                    const orderRef = db.ref(`orders/${resolvedOrderId}`);
+                    const orderId = resolvedOrderId;
 
                     // 1. Save to global orders
                     orderRef.set(orderData)
                         .then(() => {
-                            console.log('Order saved:', orderId);
-                            
                             // Send order confirmation emails after successful save
-                            console.log("EmailJS check:", typeof EMAILJS_SERVICE_ID, EMAILJS_SERVICE_ID, EMAILJS_PUBLIC_KEY);
                             const SERVICE_ID = "service_r7f83sg";
                             const ADMIN_TEMPLATE = "template_n4wrqtj";
-                            const CUSTOMER_TEMPLATE = "template_6oupid9"; // Customer order confirmation
                             const PUB_KEY = "M2IU4HlY2wh4L6Fc0";
-
-                            // Build per-item product lines (one per item for clarity)
-                            const firstItem = orderData.items[0] || {};
-                            const productLines = orderData.items.map(i =>
-                                `${i.name} (${i.volume || 'N/A'}) x${i.quantity} — ₹${i.price * i.quantity}`
-                            ).join('\n');
 
                             const emailParams = {
                                 order_id:        orderId,
                                 customer_name:   shippingDetails.name,
                                 customer_phone:  shippingDetails.phone,
                                 customer_email:  shippingDetails.email,
-                                product_name:    firstItem.name || '',
-                                product_size:    firstItem.volume || '',
-                                quantity:        firstItem.quantity || 1,
-                                product_details: productLines,
+                                product_name:    orderLineData.productName,
+                                product_size:    orderLineData.productSize,
+                                quantity:        orderLineData.totalQuantity,
+                                total_quantity:  orderLineData.totalQuantity,
+                                item_count:      orderLineData.itemCount,
+                                product_summary: orderLineData.productSummary,
+                                product_details: orderLineData.productDetails,
                                 total_amount:    this._orderTotal,
                                 shipping_charge: shippingDetails.shippingCharge || 0,
                                 city:            shippingDetails.city,
@@ -1566,16 +1714,18 @@ document.addEventListener("DOMContentLoaded", () => {
                                     template_params: emailParams
                                 })
                             }).then(res => {
-                                if(res.ok) console.log('Admin order notification sent successfully');
-                                else console.error('Admin email sending failed', res.status);
-                            }).catch(err => console.error('EmailJS admin request failed:', err));
+                                if (!res.ok) {
+                                    app.showToast(`Order confirmed, but notification email failed. Please save order ID: ${orderId}`, 'error');
+                                }
+                            }).catch(() => {
+                                app.showToast(`Order confirmed, but notification email failed. Please save order ID: ${orderId}`, 'error');
+                            });
 
                             // Note: Customer order confirmation is handled via
                             // tracking-panel.html when owner ships the order.
 
                             // --- GOOGLE SHEETS SYNC ---
                             if (GOOGLE_SHEETS_URL && GOOGLE_SHEETS_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
-                                const firstItem = orderData.items[0] || {};
                                 fetch(GOOGLE_SHEETS_URL, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
@@ -1589,10 +1739,13 @@ document.addEventListener("DOMContentLoaded", () => {
                                         city:            shippingDetails.city,
                                         state:           shippingDetails.state,
                                         pincode:         shippingDetails.pincode,
-                                        product_name:    firstItem.name || '',
-                                        product_size:    firstItem.volume || '',
-                                        quantity:        firstItem.quantity || 1,
-                                        product_details: orderData.items.map(i => `${i.name} (${i.volume||'N/A'}) x${i.quantity}`).join('; '),
+                                        product_name:    orderLineData.productName,
+                                        product_size:    orderLineData.productSize,
+                                        quantity:        orderLineData.totalQuantity,
+                                        total_quantity:  orderLineData.totalQuantity,
+                                        item_count:      orderLineData.itemCount,
+                                        product_summary: orderLineData.productSummary,
+                                        product_details: orderLineData.productDetails,
                                         subtotal:        orderData.subtotal,
                                         shipping_charge: shippingDetails.shippingCharge || 0,
                                         discount:        orderData.discount || 0,
@@ -1602,27 +1755,33 @@ document.addEventListener("DOMContentLoaded", () => {
                                         coupon_code:     orderData.couponCode || ''
                                     })
                                 }).then(res => {
-                                    if(res.ok) console.log('Order synced to Google Sheets ✅');
-                                    else console.error('Google Sheets sync failed', res.status);
-                                }).catch(err => console.error('Google Sheets sync error:', err));
+                                    if (!res.ok) {
+                                        app.showToast('Order saved, but Google Sheets sync failed.', 'error');
+                                    }
+                                }).catch(() => {
+                                    app.showToast('Order saved, but Google Sheets sync failed.', 'error');
+                                });
                             }
                         })
-                        .catch(err => console.error('Order save failed:', err));
+                        .catch(() => {
+                            app.showToast('Could not save your order. Please contact support.', 'error');
+                        });
 
                     // 2. Save by phone number (for guest order tracking)
                     const phone = (shippingDetails.phone || '').replace(/[^0-9]/g, '');
                     if (phone) {
                         db.ref(`orders-by-phone/${phone}/${orderId}`).set(orderData)
-                            .then(() => console.log('Phone-linked order saved:', phone))
-                            .catch(err => console.error('Phone order save failed:', err));
+                            .catch(() => {});
                     }
 
                     // 3. Save to user's orders if logged in
                     if (app.currentUser) {
                         db.ref(`users/${app.currentUser.uid}/orders/${orderId}`).set(orderData)
-                            .catch(err => console.error('User order save failed:', err));
+                            .catch(() => {});
                     }
                 }
+
+                sessionStorage.setItem('etremLastOrder', JSON.stringify(orderSuccessPayload));
 
                 // Clear cart
                 app.cart = [];
@@ -1636,7 +1795,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // Redirect to order confirmation / home
                 setTimeout(() => {
-                    window.location.href = './index.html';
+                    window.location.href = './order-success.html';
                 }, 2500);
             }
         },
@@ -1767,6 +1926,43 @@ document.addEventListener("DOMContentLoaded", () => {
                     this.answers = {};
                     this.renderQuestion(container);
                 });
+            }
+        },
+
+        orderSuccess: {
+            initOrderSuccessPage() {
+                const orderDataRaw = sessionStorage.getItem('etremLastOrder');
+                const orderIdEl = document.getElementById('success-order-id');
+                const itemsEl = document.getElementById('success-order-items');
+                const totalEl = document.getElementById('success-order-total');
+                const deliveryEl = document.getElementById('success-delivery-estimate');
+                if (!orderIdEl || !itemsEl || !totalEl || !deliveryEl) return;
+
+                if (!orderDataRaw) {
+                    orderIdEl.textContent = 'Not available';
+                    itemsEl.innerHTML = '<li>No order details available.</li>';
+                    totalEl.textContent = '₹0';
+                    deliveryEl.textContent = '5-7 business days';
+                    return;
+                }
+
+                try {
+                    const orderData = JSON.parse(orderDataRaw);
+                    orderIdEl.textContent = orderData.orderId || 'Not available';
+                    totalEl.textContent = `₹${orderData.total || 0}`;
+                    deliveryEl.textContent = orderData.estimatedDelivery || '5-7 business days';
+                    const items = Array.isArray(orderData.items) ? orderData.items : [];
+                    itemsEl.innerHTML = items.length
+                        ? items.map(item => `<li>${item.name} (${item.volume || 'N/A'}) × ${item.quantity} — ₹${item.lineTotal || 0}</li>`).join('')
+                        : '<li>No item details available.</li>';
+                    sessionStorage.removeItem('etremLastOrder');
+                } catch (_) {
+                    orderIdEl.textContent = 'Not available';
+                    itemsEl.innerHTML = '<li>Could not load order details.</li>';
+                    totalEl.textContent = '₹0';
+                    deliveryEl.textContent = '5-7 business days';
+                    app.showToast('Order details unavailable. Please check your email confirmation or contact support.', 'error');
+                }
             }
         },
 

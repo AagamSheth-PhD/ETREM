@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en-in">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmed - ETREM</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+    <div id="search-overlay" class="search-overlay"><button id="close-search" class="close-search">&times;</button><input type="text" id="search-input" placeholder="Search for a fragrance..."><div id="search-results"></div></div>
+    <header class="header solid"></header>
+    <main class="order-success-page" style="padding: 5rem 0 3rem;">
+        <div class="container" style="max-width: 760px;">
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(212,168,67,0.28); border-radius: 12px; padding: 2rem;">
+                <h1 style="margin-bottom:0.5rem;">🎉 Order Confirmed</h1>
+                <p style="margin-bottom:1rem;color:var(--text-muted);">Thank you for shopping with ETREM.</p>
+                <p><strong>Order ID:</strong> <span id="success-order-id"></span></p>
+                <p><strong>Total:</strong> <span id="success-order-total"></span></p>
+                <p><strong>Estimated Delivery:</strong> <span id="success-delivery-estimate"></span></p>
+                <h3 style="margin:1.4rem 0 0.6rem;">Items Ordered</h3>
+                <ul id="success-order-items" style="padding-left:1rem; line-height:1.8;"></ul>
+                <div style="display:flex; gap:0.7rem; flex-wrap:wrap; margin-top:1.4rem;">
+                    <a href="./shop.html" class="btn btn-primary">Continue Shopping</a>
+                    <a href="./profile.html" class="btn btn-secondary">Track Order</a>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <nav class="seo-footer" aria-label="Footer Navigation">
+            <a href="./shop.html">Shop</a>
+            <a href="./about.html">About</a>
+            <a href="./contact.html">Contact</a>
+            <a href="./blog.html">Blog</a>
+        </nav>
+    </footer>
+    <div id="toast-container"></div>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="./js/main.js" defer></script>
+</body>
+</html>
