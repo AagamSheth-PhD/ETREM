@@ -41,6 +41,14 @@
                     <div id="checkout-items"></div>
                     <div class="summary-row"><span>Subtotal</span><span id="checkout-subtotal"></span></div>
                     <div class="summary-row"><span>Shipping</span><span id="checkout-shipping"></span></div>
+                    <div class="summary-row" id="discount-row" style="display:none;color:#4CAF50;"><span>Discount</span><span id="checkout-discount"></span></div>
+                    <div class="coupon-section">
+                        <div class="coupon-input-group">
+                            <input type="text" id="coupon-input" placeholder="Enter coupon code" maxlength="20">
+                            <button type="button" id="apply-coupon-btn" class="btn btn-outline">Apply</button>
+                        </div>
+                        <p id="coupon-message" class="coupon-msg"></p>
+                    </div>
                     <div class="summary-row summary-total"><span>Total</span><span id="checkout-total"></span></div>
                     <div class="payment-methods">
                         <h4>Payment Method</h4>
