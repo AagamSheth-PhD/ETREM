@@ -624,7 +624,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         this.copyTextToClipboard(window.location.href).then(() => {
                             this.showToast('Link copied to clipboard!');
                         }).catch(() => {
-                            this.showToast('Could not copy link.', 'error');
+                            this.showToast('Unable to copy link. Please check browser permissions or copy from the address bar.', 'error');
                         });
                     }
                 });
@@ -1108,7 +1108,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 btn.parentElement.appendChild(tip);
                                 setTimeout(() => tip.remove(), 2100);
                             } catch (_) {
-                                app.showToast('Could not copy link.', 'error');
+                                app.showToast('Unable to copy link. Please check browser permissions or copy from the address bar.', 'error');
                             }
                         }
                     });
@@ -1218,7 +1218,7 @@ document.addEventListener("DOMContentLoaded", () => {
             add(productId, quantity = 1, volume = '') {
                 const product = app.products.find(p => p.id === productId);
                 if (!product) {
-                    app.showToast(`Product ${productId} is unavailable right now.`, "error");
+                    app.showToast('The selected product is currently unavailable. Please browse other fragrances or contact support.', "error");
                     return;
                 }
                 const normalizedVolume = app.normalizeVolume(productId, volume);
@@ -1715,10 +1715,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                 })
                             }).then(res => {
                                 if (!res.ok) {
-                                    app.showToast('Order saved, but notification email could not be sent.', 'error');
+                                    app.showToast(`Order confirmed, but notification email failed. Please save order ID: ${orderId}`, 'error');
                                 }
                             }).catch(() => {
-                                app.showToast('Order saved, but notification email could not be sent.', 'error');
+                                app.showToast(`Order confirmed, but notification email failed. Please save order ID: ${orderId}`, 'error');
                             });
 
                             // Note: Customer order confirmation is handled via
@@ -1961,7 +1961,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     itemsEl.innerHTML = '<li>Could not load order details.</li>';
                     totalEl.textContent = '₹0';
                     deliveryEl.textContent = '5-7 business days';
-                    app.showToast('Could not load order details. Please refresh this page.', 'error');
+                    app.showToast('Order details unavailable. Please check your email confirmation or contact support.', 'error');
                 }
             }
         },
