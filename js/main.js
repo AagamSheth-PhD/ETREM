@@ -547,6 +547,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (document.querySelector('.cart-page')) this.cartManager.initCartPage();
             if (document.querySelector('.checkout-page')) this.checkout.initCheckoutPage();
             if (document.querySelector('.quiz-page')) this.quiz.init();
+            if (document.querySelector('.profile-page')) this.profileManager.initProfilePage();
 
             this.cartManager.updateCartCount();
         },
@@ -1261,19 +1262,32 @@ document.addEventListener("DOMContentLoaded", () => {
                     paymentId: paymentId,
                     status: paymentMethod === 'COD' ? 'confirmed' : 'paid',
                     createdAt: new Date().toISOString(),
-                    userId: app.currentUser ? app.currentUser.uid : 'guest'
+                    userId: app.currentUser ? app.currentUser.uid : 'guest',
+                    phone: shippingDetails.phone || ''
                 };
 
                 // Save to Firebase if available
                 if (db) {
                     const orderRef = db.ref('orders').push();
-                    orderRef.set(orderData)
-                        .then(() => console.log('Order saved to Firebase:', orderRef.key))
-                        .catch(err => console.error('Firebase order save failed:', err));
+                    const orderId = orderRef.key;
+                    orderData.orderId = orderId;
 
-                    // Also save to user's orders if logged in
+                    // 1. Save to global orders
+                    orderRef.set(orderData)
+                        .then(() => console.log('Order saved:', orderId))
+                        .catch(err => console.error('Order save failed:', err));
+
+                    // 2. Save by phone number (for guest order tracking)
+                    const phone = (shippingDetails.phone || '').replace(/[^0-9]/g, '');
+                    if (phone) {
+                        db.ref(`orders-by-phone/${phone}/${orderId}`).set(orderData)
+                            .then(() => console.log('Phone-linked order saved:', phone))
+                            .catch(err => console.error('Phone order save failed:', err));
+                    }
+
+                    // 3. Save to user's orders if logged in
                     if (app.currentUser) {
-                        db.ref(`users/${app.currentUser.uid}/orders/${orderRef.key}`).set(orderData)
+                        db.ref(`users/${app.currentUser.uid}/orders/${orderId}`).set(orderData)
                             .catch(err => console.error('User order save failed:', err));
                     }
                 }
@@ -1287,7 +1301,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const method = paymentMethod === 'COD' ? 'Cash on Delivery' : 'Online Payment';
                 app.showToast(`Order placed successfully via ${method}! 🎉`);
 
-                // Redirect to home after delay
+                // Redirect to order confirmation / home
                 setTimeout(() => {
                     window.location.href = './index.html';
                 }, 2500);
@@ -1420,6 +1434,154 @@ document.addEventListener("DOMContentLoaded", () => {
                     this.answers = {};
                     this.renderQuestion(container);
                 });
+            }
+        },
+
+        // --- 12. PROFILE & ORDER TRACKING MODULE ---
+        profileManager: {
+            initProfilePage() {
+                // Tab navigation
+                const tabs = document.querySelectorAll('.profile-tab');
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const targetId = tab.dataset.target;
+                        if (!targetId) return;
+
+                        tabs.forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+
+                        document.querySelectorAll('.profile-tab-content').forEach(c => c.classList.remove('active'));
+                        const target = document.getElementById(targetId);
+                        if (target) target.classList.add('active');
+                    });
+                });
+
+                // Logout button
+                const logoutBtn = document.getElementById('logout-btn');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        try {
+                            await firebase.auth().signOut();
+                            app.showToast('Logged out successfully');
+                            window.location.href = './index.html';
+                        } catch (err) {
+                            console.error('Logout error:', err);
+                        }
+                    });
+                }
+
+                // Track order by phone
+                const trackBtn = document.getElementById('track-order-btn');
+                const trackInput = document.getElementById('track-phone-input');
+                if (trackBtn && trackInput) {
+                    trackBtn.addEventListener('click', () => {
+                        const phone = trackInput.value.replace(/[^0-9]/g, '');
+                        if (phone.length < 10) {
+                            app.showToast('Please enter a valid 10-digit phone number', 'error');
+                            return;
+                        }
+                        this.loadOrdersByPhone(phone);
+                    });
+                    trackInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') trackBtn.click();
+                    });
+                }
+
+                // If logged in, auto-load orders
+                if (app.currentUser) {
+                    this.loadUserOrders();
+                }
+            },
+
+            loadUserOrders() {
+                if (!db || !app.currentUser) return;
+                const container = document.getElementById('order-history-container');
+                if (!container) return;
+
+                container.innerHTML = '<p class="loading-text">Loading your orders...</p>';
+
+                db.ref(`users/${app.currentUser.uid}/orders`).orderByChild('createdAt').once('value')
+                    .then(snapshot => {
+                        if (!snapshot.exists()) {
+                            container.innerHTML = '<p>No orders found. <a href="./shop.html">Start shopping!</a></p>';
+                            return;
+                        }
+                        const orders = [];
+                        snapshot.forEach(child => orders.push(child.val()));
+                        orders.reverse(); // newest first
+                        this.renderOrders(orders, container);
+                    })
+                    .catch(err => {
+                        console.error('Load orders error:', err);
+                        container.innerHTML = '<p>Could not load orders. Please try again later.</p>';
+                    });
+            },
+
+            loadOrdersByPhone(phone) {
+                if (!db) return;
+                const container = document.getElementById('order-history-container');
+                if (!container) return;
+
+                container.innerHTML = '<p class="loading-text">Searching orders...</p>';
+
+                // Switch to orders tab
+                document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.profile-tab-content').forEach(c => c.classList.remove('active'));
+                const ordersTab = document.querySelector('[data-target="orders-content"]');
+                const ordersContent = document.getElementById('orders-content');
+                if (ordersTab) ordersTab.classList.add('active');
+                if (ordersContent) ordersContent.classList.add('active');
+
+                db.ref(`orders-by-phone/${phone}`).orderByChild('createdAt').once('value')
+                    .then(snapshot => {
+                        if (!snapshot.exists()) {
+                            container.innerHTML = `<p>No orders found for phone number ending in ...${phone.slice(-4)}. Please check the number and try again.</p>`;
+                            return;
+                        }
+                        const orders = [];
+                        snapshot.forEach(child => orders.push(child.val()));
+                        orders.reverse();
+                        this.renderOrders(orders, container);
+                        app.showToast(`Found ${orders.length} order(s)!`);
+                    })
+                    .catch(err => {
+                        console.error('Phone order lookup error:', err);
+                        container.innerHTML = '<p>Could not load orders. Please try again later.</p>';
+                    });
+            },
+
+            renderOrders(orders, container) {
+                container.innerHTML = orders.map(order => {
+                    const date = new Date(order.createdAt).toLocaleDateString('en-IN', {
+                        day: 'numeric', month: 'short', year: 'numeric'
+                    });
+                    const itemsList = (order.items || []).map(item =>
+                        `<span class="order-item-tag">${item.name} \u00d7 ${item.quantity}</span>`
+                    ).join('');
+                    const statusClass = order.status === 'paid' ? 'status-paid' :
+                                        order.status === 'confirmed' ? 'status-confirmed' : 'status-default';
+                    const payLabel = order.paymentMethod === 'COD' ? 'Cash on Delivery' : 'Online Payment';
+
+                    return `
+                        <div class="order-card">
+                            <div class="order-card-header">
+                                <div>
+                                    <span class="order-date">${date}</span>
+                                    <span class="order-status ${statusClass}">${order.status || 'processing'}</span>
+                                </div>
+                                <span class="order-total">\u20b9${order.total}</span>
+                            </div>
+                            <div class="order-card-items">${itemsList}</div>
+                            <div class="order-card-footer">
+                                <span class="order-payment">${payLabel}</span>
+                                ${order.couponCode ? `<span class="order-coupon">Coupon: ${order.couponCode}</span>` : ''}
+                                ${order.orderId ? `<span class="order-id">ID: ${order.orderId.slice(-8)}</span>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
             }
         }
     };
