@@ -277,6 +277,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <p>&copy; ${new Date().getFullYear()} ETREM – The Naked Perfume. All rights reserved.</p>
                             <p id="dev-credit">Crafted with ♥ in India</p>
                             <p class="dev-attribution">Designed and Developed by <a href="https://digitalorigami.in" target="_blank" rel="noopener">Digital Origami</a></p>
+                            <a href="./tracking-panel.html" aria-label="Tracking Panel" style="opacity:0.2;text-decoration:none;color:inherit;font-size:0.7rem;line-height:1;">•</a>
                         </div>
                     </div>
                 `;
@@ -449,22 +450,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 addToCartPDP.addEventListener('click', () => {
                     const productData = page.dataset.productId;
                     const quantity = parseInt(qtyInput ? qtyInput.value : 1);
+                    const rawVolume = document.querySelector('.volume-btn.active')?.dataset.volume || '';
 
                     // Check if the data-product-id is already a valid product ID
                     // (combo and trial pages use the full ID directly)
                     const directMatch = app.products.find(p => p.id === productData);
                     if (directMatch) {
-                        app.cartManager.add(productData, quantity);
+                        app.cartManager.add(productData, quantity, rawVolume);
                         return;
                     }
 
                     // For individual perfume pages with volume selectors
-                    const activeVolume = document.querySelector('.volume-btn.active');
-                    const volume = activeVolume ? activeVolume.dataset.volume : '50ml';
-                    const volumeSuffix = volume === '20ml' ? '-20' : '-50';
+                    const selectedVolume = rawVolume || '50ml';
+                    const volumeSuffix = selectedVolume === '20ml' ? '-20' : '-50';
                     const productId = productData + volumeSuffix;
 
-                    app.cartManager.add(productId, quantity);
+                    app.cartManager.add(productId, quantity, rawVolume);
                 });
             }
 
@@ -565,7 +566,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     e.preventDefault();
                     e.stopPropagation();
                     const productId = btn.dataset.productId;
-                    this.cartManager.add(productId);
+                    const volume = btn.dataset.volume || '';
+                    this.cartManager.add(productId, 1, volume);
                 });
             });
 
@@ -1083,7 +1085,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 this.renderCartPage();
             },
 
-            add(productId, quantity = 1) {
+            add(productId, quantity = 1, volume = '') {
                 const product = app.products.find(p => p.id === productId);
                 if (!product) {
                     console.warn("Product not found:", productId);
@@ -1094,7 +1096,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (existingItem) {
                     existingItem.quantity += quantity;
                 } else {
-                    app.cart.push({ id: productId, quantity });
+                    app.cart.push({ id: productId, quantity, volume });
                 }
                 this.save();
                 app.showToast(`${product.name} added to cart!`);
