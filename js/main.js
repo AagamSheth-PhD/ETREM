@@ -157,6 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <li><a href="./contact.html" class="nav-link">Contact</a></li>
                         </ul>
                         <div class="nav-actions">
+                            <a href="./profile.html" style="color: var(--accent-gold); font-size: 0.8rem; font-weight: 700; text-decoration: none; letter-spacing: 0.5px; white-space: nowrap;">TRACK ORDER</a>
                             <button class="nav-action-btn" id="search-icon" aria-label="Search">
                                 <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
                             </button>
@@ -214,9 +215,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (userIcon) {
                     userIcon.addEventListener('click', (e) => {
                         e.preventDefault();
-                        // Always go to profile page. 
-                        // Logged-in users see their account, guests see the "Track Order" feature.
-                        window.location.href = './profile.html';
+                        if (this.currentUser) {
+                            window.location.href = './profile.html';
+                        } else {
+                            window.location.href = './login.html';
+                        }
                     });
                 }
 
