@@ -1652,6 +1652,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 };
 
                 const orderLineData = app.buildOrderItemDetails(orderData.items);
+                const fallbackOrderLines = orderData.items.map(item => {
+                    const volume = item.volume || app.deriveVolumeFromProductId(item.id) || 'N/A';
+                    const quantity = Number(item.quantity) > 0 ? Number(item.quantity) : 1;
+                    const lineTotal = (Number(item.price) || 0) * quantity;
+                    return `${item.name || item.id} (${volume}) x${quantity} — ₹${lineTotal}`;
+                });
+                const productDetailsText = orderLineData.productDetails || fallbackOrderLines.join('\n');
+                const productDetailsHtml = orderLineData.productDetailsHtml || fallbackOrderLines.join('<br>');
+                const productSummary = orderLineData.productSummary || orderData.items.map(item => item.name).filter(Boolean).join(', ');
+                const totalQuantity = orderLineData.totalQuantity || orderData.items.reduce((sum, item) => sum + (Number(item.quantity) > 0 ? Number(item.quantity) : 1), 0);
+                const itemCount = orderLineData.itemCount || orderData.items.length;
+                const productName = orderLineData.productName || productSummary || 'Order items';
+                const productSize = orderLineData.productSize || orderLineData.sizeList || 'Mixed';
                 const generatedOrderId = `ETREM-${Date.now()}`;
                 let resolvedOrderId = generatedOrderId;
                 if (db) {
@@ -1683,15 +1696,25 @@ document.addEventListener("DOMContentLoaded", () => {
                     customer_name:   shippingDetails.name,
                     customer_phone:  shippingDetails.phone,
                     customer_email:  shippingDetails.email,
-                    product_name:    orderLineData.productName,
-                    product_size:    orderLineData.productSize,
-                    quantity:        orderLineData.totalQuantity,
-                    total_quantity:  orderLineData.totalQuantity,
-                    item_count:      orderLineData.itemCount,
-                    product_summary: orderLineData.productSummary,
-                    product_details: orderLineData.productDetails,
-                    product_details_html: orderLineData.productDetailsHtml,
+                    name:            shippingDetails.name,
+                    to_name:         shippingDetails.name,
+                    phone:           shippingDetails.phone,
+                    email:           shippingDetails.email,
+                    to_email:        shippingDetails.email,
+                    product_name:    productName,
+                    product_size:    productSize,
+                    quantity:        totalQuantity,
+                    total_quantity:  totalQuantity,
+                    item_count:      itemCount,
+                    product_summary: productSummary,
+                    product_details: productDetailsText,
+                    product_details_html: productDetailsHtml,
+                    order_list:      productDetailsText,
+                    order_items:     productDetailsText,
+                    order_items_html: productDetailsHtml,
                     total_amount:    this._orderTotal,
+                    order_total:     this._orderTotal,
+                    total:           this._orderTotal,
                     shipping_charge: shippingDetails.shippingCharge || 0,
                     city:            shippingDetails.city,
                     address:         `${shippingDetails.address}, ${shippingDetails.city}, ${shippingDetails.state} - ${shippingDetails.pincode}`,
@@ -1700,6 +1723,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const sheetPayload = {
                     order_id:        orderId,
+                    orderId:         orderId,
                     timestamp:       orderData.createdAt,
                     name:            shippingDetails.name,
                     phone:           shippingDetails.phone,
@@ -1708,17 +1732,22 @@ document.addEventListener("DOMContentLoaded", () => {
                     city:            shippingDetails.city,
                     state:           shippingDetails.state,
                     pincode:         shippingDetails.pincode,
-                    product_name:    orderLineData.productName,
-                    product_size:    orderLineData.productSize,
-                    quantity:        orderLineData.totalQuantity,
-                    total_quantity:  orderLineData.totalQuantity,
-                    item_count:      orderLineData.itemCount,
-                    product_summary: orderLineData.productSummary,
-                    product_details: orderLineData.productDetails,
+                    product_name:    productName,
+                    product_size:    productSize,
+                    quantity:        totalQuantity,
+                    total_quantity:  totalQuantity,
+                    item_count:      itemCount,
+                    product_summary: productSummary,
+                    product_details: productDetailsText,
+                    product_details_html: productDetailsHtml,
+                    order_list:      productDetailsText,
+                    order_items:     productDetailsText,
+                    items_json:      JSON.stringify(orderData.items),
                     subtotal:        orderData.subtotal,
                     shipping_charge: shippingDetails.shippingCharge || 0,
                     discount:        orderData.discount || 0,
                     total_amount:    orderData.total,
+                    total:           orderData.total,
                     payment_method:  paymentMethod,
                     payment_status:  paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online',
                     coupon_code:     orderData.couponCode || ''
@@ -1771,9 +1800,21 @@ document.addEventListener("DOMContentLoaded", () => {
                             body: new URLSearchParams(sheetPayload)
                         }).then(res => {
                             if (!res.ok) {
-                                app.showToast('Order saved, but Google Sheets sync failed.', 'error');
+                                throw new Error(`Sheets sync failed: ${res.status}`);
                             }
-                        }).catch(() => {
+                        }).catch((error) => {
+                            console.warn('Google Sheets sync via CORS failed, retrying with no-cors mode.', error);
+                            // Apps Script deployments may reject cross-origin response reads; this fallback still submits data,
+                            // but response validation is unavailable in no-cors mode.
+                            return fetch(GOOGLE_SHEETS_URL, {
+                                method: 'POST',
+                                mode: 'no-cors',
+                                redirect: 'follow',
+                                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                                body: new URLSearchParams(sheetPayload)
+                            });
+                        }).catch((error) => {
+                            console.error('Google Sheets sync failed after fallback.', error);
                             app.showToast('Order saved, but Google Sheets sync failed.', 'error');
                         })
                     );
