@@ -1756,6 +1756,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                                 fetch(GOOGLE_SHEETS_URL, {
                                     method: 'POST',
+                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
                                     body: new URLSearchParams(sheetPayload)
                                 }).then(res => {
                                     if (!res.ok) {
