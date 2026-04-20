@@ -1808,20 +1808,21 @@ document.addEventListener("DOMContentLoaded", () => {
                     }).catch(() => {})
                 );
 
-                if (GOOGLE_SHEETS_URL && GOOGLE_SHEETS_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+                if (GOOGLE_SHEETS_URL) {
                     syncTasks.push(
                         fetch(GOOGLE_SHEETS_URL, {
                             method: 'POST',
-                            redirect: 'follow',
+                            mode: 'no-cors', // CRITICAL: Prevents browser from blocking the request
+                            cache: 'no-cache',
                             headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
-                            },
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                             },
                             body: new URLSearchParams(sheetPayload)
-                        }).catch((error) => {
-                            console.error('Google Sheets sync failed.', error);
-                        })
-                    );
-                }
+                         }).catch((error) => {
+                        console.error('Google Sheets sync failed.', error);
+                  })
+              );
+            }
 
                 await Promise.allSettled(syncTasks);
 
