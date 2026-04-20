@@ -1795,10 +1795,21 @@ document.addEventListener("DOMContentLoaded", () => {
                     syncTasks.push(
                         fetch(GOOGLE_SHEETS_URL, {
                             method: 'POST',
-                            mode: 'no-cors',
                             redirect: 'follow',
                             headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-                            body: new URLSearchParams(sheetPayload).toString()
+                            body: new URLSearchParams(sheetPayload)
+                        }).then(res => {
+                            if (!res.ok) {
+                                throw new Error(`Sheets sync failed: ${res.status}`);
+                            }
+                        }).catch(() => {
+                            return fetch(GOOGLE_SHEETS_URL, {
+                                method: 'POST',
+                                mode: 'no-cors',
+                                redirect: 'follow',
+                                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                                body: new URLSearchParams(sheetPayload)
+                            });
                         }).catch(() => {
                             app.showToast('Order saved, but Google Sheets sync failed.', 'error');
                         })
