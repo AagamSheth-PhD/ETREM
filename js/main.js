@@ -1766,6 +1766,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     syncTasks.push(
                         fetch(GOOGLE_SHEETS_URL, {
                             method: 'POST',
+                            redirect: 'follow',
                             headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
                             body: new URLSearchParams(sheetPayload)
                         }).then(res => {

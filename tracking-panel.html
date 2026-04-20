@@ -265,9 +265,8 @@
             const customerEmail     = document.getElementById('t-customer-email').value.trim();
             const customerName      = document.getElementById('t-customer-name').value.trim();
             const orderId           = document.getElementById('t-order-id').value.trim();
-            const courierPartner    = document.getElementById('t-courier').value;
+            const courier           = document.getElementById('t-courier').value;
             const trackingLink      = document.getElementById('t-tracking-link').value.trim();
-            const estimatedDelivery = document.getElementById('t-estimated-delivery').value.trim() || 'Within 5–7 business days';
 
             try {
                 const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
@@ -278,28 +277,10 @@
                         template_id: TRACKING_TEMPLATE,
                         user_id:     EMAILJS_PUBLIC_KEY,
                         template_params: {
-                            email_subject: `Your ETREM Order #${orderId} is on its way! 📦`,
+                            to_email:      customerEmail,
                             to_name:       customerName,
-                            message_body:
-`Hi ${customerName},
-
-Great news! Your ETREM order has been shipped. 🚀
-
-Order ID: ${orderId}
-Courier Partner: ${courierPartner}
-Estimated Delivery: ${estimatedDelivery}
-
-Track your shipment here:
-${trackingLink}
-
-If you have any questions, feel free to reach out:
-📧 etrem.perfumes@gmail.com
-📞 +91 7069122218
-
-Thank you for choosing ETREM – The Naked Perfume. 🖤
-
-Warm regards,
-Team ETREM`
+                            email_subject: 'Your ETREM Order Has Been Shipped! 🚀',
+                            message_body:  `Order ID: ${orderId}\nTracking: ${trackingLink}\nCourier: ${courier}`
                         }
                     })
                 });
