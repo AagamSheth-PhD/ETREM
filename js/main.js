@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const EMAILJS_SERVICE_ID = "service_r7f83sg";
     const EMAILJS_TEMPLATE_ID = "template_jlyjy5i";
     const EMAILJS_PUBLIC_KEY = "M2IU4HlY2wh4L6Fc0";
-    const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzyySB6RqtITO7ZtWoFoMvTFCKx6TtklAxRlIS1F7f4hlZ6kgiSQFEM6nAXQ_KIdSOZ/exec";
+    const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzK42O3GFHIOVKKJbREDRIbcrCsyPvztuAlU3_rwICvpG3hXjLce1KDBHC6xyfpRM2CVQ/exec";
 
     // Initialize Firebase
     let auth, db;
