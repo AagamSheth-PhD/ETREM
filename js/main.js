@@ -196,11 +196,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
             return {
                 productDetails: productDetailsLines.join('\n'),
+                productDetailsHtml: productDetailsLines.join('<br>'),
                 totalQuantity,
                 itemCount,
                 productSummary,
-                productName: itemCount > 1 ? 'Multiple Items' : (firstItem.name || ''),
-                productSize: itemCount > 1 ? 'See details below' : (firstItem.volume || this.deriveVolumeFromProductId(firstItem.id) || ''),
+                productName: itemCount > 1 ? (productSummary || 'Multiple Items') : (firstItem.name || ''),
+                productSize: itemCount > 1 ? (sizeList || 'Mixed') : (firstItem.volume || this.deriveVolumeFromProductId(firstItem.id) || ''),
                 sizeList
             };
         },
@@ -1696,6 +1697,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 item_count:      orderLineData.itemCount,
                                 product_summary: orderLineData.productSummary,
                                 product_details: orderLineData.productDetails,
+                                product_details_html: orderLineData.productDetailsHtml,
                                 total_amount:    this._orderTotal,
                                 shipping_charge: shippingDetails.shippingCharge || 0,
                                 city:            shippingDetails.city,
@@ -1726,34 +1728,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             // --- GOOGLE SHEETS SYNC ---
                             if (GOOGLE_SHEETS_URL && GOOGLE_SHEETS_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+                                const sheetPayload = {
+                                    order_id:        orderId,
+                                    timestamp:       orderData.createdAt,
+                                    name:            shippingDetails.name,
+                                    phone:           shippingDetails.phone,
+                                    email:           shippingDetails.email,
+                                    address:         shippingDetails.address,
+                                    city:            shippingDetails.city,
+                                    state:           shippingDetails.state,
+                                    pincode:         shippingDetails.pincode,
+                                    product_name:    orderLineData.productName,
+                                    product_size:    orderLineData.productSize,
+                                    quantity:        orderLineData.totalQuantity,
+                                    total_quantity:  orderLineData.totalQuantity,
+                                    item_count:      orderLineData.itemCount,
+                                    product_summary: orderLineData.productSummary,
+                                    product_details: orderLineData.productDetails,
+                                    subtotal:        orderData.subtotal,
+                                    shipping_charge: shippingDetails.shippingCharge || 0,
+                                    discount:        orderData.discount || 0,
+                                    total_amount:    orderData.total,
+                                    payment_method:  paymentMethod,
+                                    payment_status:  paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online',
+                                    coupon_code:     orderData.couponCode || ''
+                                };
+
                                 fetch(GOOGLE_SHEETS_URL, {
                                     method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        order_id:        orderId,
-                                        timestamp:       orderData.createdAt,
-                                        name:            shippingDetails.name,
-                                        phone:           shippingDetails.phone,
-                                        email:           shippingDetails.email,
-                                        address:         shippingDetails.address,
-                                        city:            shippingDetails.city,
-                                        state:           shippingDetails.state,
-                                        pincode:         shippingDetails.pincode,
-                                        product_name:    orderLineData.productName,
-                                        product_size:    orderLineData.productSize,
-                                        quantity:        orderLineData.totalQuantity,
-                                        total_quantity:  orderLineData.totalQuantity,
-                                        item_count:      orderLineData.itemCount,
-                                        product_summary: orderLineData.productSummary,
-                                        product_details: orderLineData.productDetails,
-                                        subtotal:        orderData.subtotal,
-                                        shipping_charge: shippingDetails.shippingCharge || 0,
-                                        discount:        orderData.discount || 0,
-                                        total_amount:    orderData.total,
-                                        payment_method:  paymentMethod,
-                                        payment_status:  paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online',
-                                        coupon_code:     orderData.couponCode || ''
-                                    })
+                                    body: new URLSearchParams(sheetPayload)
                                 }).then(res => {
                                     if (!res.ok) {
                                         app.showToast('Order saved, but Google Sheets sync failed.', 'error');
