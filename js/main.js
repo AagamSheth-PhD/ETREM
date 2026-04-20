@@ -1804,6 +1804,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             }
                         }).catch((error) => {
                             console.warn('Google Sheets sync via CORS failed, retrying with no-cors mode.', error);
+                            // Apps Script deployments may reject cross-origin response reads; this fallback still submits data,
+                            // but response validation is unavailable in no-cors mode.
                             return fetch(GOOGLE_SHEETS_URL, {
                                 method: 'POST',
                                 mode: 'no-cors',
@@ -1811,7 +1813,8 @@ document.addEventListener("DOMContentLoaded", () => {
                                 headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
                                 body: new URLSearchParams(sheetPayload)
                             });
-                        }).catch(() => {
+                        }).catch((error) => {
+                            console.error('Google Sheets sync failed after fallback.', error);
                             app.showToast('Order saved, but Google Sheets sync failed.', 'error');
                         })
                     );
