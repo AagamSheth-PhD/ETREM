@@ -84,6 +84,7 @@
                 btn.disabled = true;
 
                 const name    = document.getElementById('name')?.value || '';
+                const phone   = document.getElementById('phone')?.value || '';
                 const email   = document.getElementById('email')?.value || '';
                 const message = document.getElementById('message')?.value || '';
 
@@ -95,20 +96,10 @@
                         template_id: 'template_6oupid9',
                         user_id:     'M2IU4HlY2wh4L6Fc0',
                         template_params: {
-                            email_subject: 'New Inquiry – ETREM Perfumes',
+                            to_email:      'etrem.perfumes@gmail.com',
                             to_name:       'ETREM Team',
-                            message_body:
-`New inquiry received via etremperfumes.com.
-
-Name: ${name}
-Email: ${email}
-Submitted at: ${new Date().toLocaleString('en-IN')}
-
-Message:
-${message}
-
----
-Reply directly to: ${email}`
+                            email_subject: 'New Inquiry – ETREM Perfumes',
+                            message_body:  `Name: ${name}\nPhone: ${phone}\nEmail: ${email}\nMessage: ${message}`
                         }
                     })
                 })
