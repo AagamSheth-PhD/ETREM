@@ -1791,31 +1791,35 @@ document.addEventListener("DOMContentLoaded", () => {
                     })
                 );
 
+                syncTasks.push(
+                    fetch('https://api.emailjs.com/api/v1.0/email/send', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            service_id: SERVICE_ID,
+                            template_id: 'template_6oupid9',
+                            user_id: PUB_KEY,
+                            template_params: {
+                                to_email:      shippingDetails.email,
+                                to_name:       shippingDetails.name,
+                                email_subject: 'Your ETREM Order is Confirmed! 🎉',
+                                message_body:  `Thank you for your order, ${shippingDetails.name}!\n\nOrder ID: ${orderId}\n\nItems Ordered:\n${productDetailsText}\n\nTotal Amount: ₹${orderData.total}\nShipping: ₹${shippingDetails.shippingCharge || 0}\nPayment Method: ${paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online'}\n\nShipping Address:\n${shippingDetails.address}, ${shippingDetails.city}, ${shippingDetails.state} - ${shippingDetails.pincode}\n\nEstimated Delivery: 5-7 business days\n\nWe will send you a tracking update once your order ships.\n\nThank you for choosing ETREM – The Naked Perfume!`
+                            }
+                        })
+                    }).catch(() => {})
+                );
+
                 if (GOOGLE_SHEETS_URL && GOOGLE_SHEETS_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
                     syncTasks.push(
                         fetch(GOOGLE_SHEETS_URL, {
                             method: 'POST',
                             redirect: 'follow',
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                            },
                             body: new URLSearchParams(sheetPayload)
-                        }).then(res => {
-                            if (!res.ok) {
-                                throw new Error(`Sheets sync failed: ${res.status}`);
-                            }
                         }).catch((error) => {
-                            console.warn('Google Sheets sync via CORS failed, retrying with no-cors mode.', error);
-                            // Apps Script deployments may reject cross-origin response reads; this fallback still submits data,
-                            // but response validation is unavailable in no-cors mode.
-                            return fetch(GOOGLE_SHEETS_URL, {
-                                method: 'POST',
-                                mode: 'no-cors',
-                                redirect: 'follow',
-                                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-                                body: new URLSearchParams(sheetPayload)
-                            });
-                        }).catch((error) => {
-                            console.error('Google Sheets sync failed after fallback.', error);
-                            app.showToast('Order saved, but Google Sheets sync failed.', 'error');
+                            console.error('Google Sheets sync failed.', error);
                         })
                     );
                 }
