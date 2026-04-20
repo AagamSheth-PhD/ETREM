@@ -196,11 +196,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
             return {
                 productDetails: productDetailsLines.join('\n'),
+                productDetailsHtml: productDetailsLines.join('<br>'),
                 totalQuantity,
                 itemCount,
                 productSummary,
-                productName: itemCount > 1 ? 'Multiple Items' : (firstItem.name || ''),
-                productSize: itemCount > 1 ? 'See details below' : (firstItem.volume || this.deriveVolumeFromProductId(firstItem.id) || ''),
+                productName: itemCount > 1 ? (productSummary || 'Multiple Items') : (firstItem.name || ''),
+                productSize: itemCount > 1 ? (sizeList || 'Mixed') : (firstItem.volume || this.deriveVolumeFromProductId(firstItem.id) || ''),
                 sizeList
             };
         },
@@ -1623,7 +1624,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             },
 
-            _saveOrder(shippingDetails, paymentMethod, paymentId) {
+            async _saveOrder(shippingDetails, paymentMethod, paymentId) {
                 const orderData = {
                     items: app.cart.map(item => {
                         const product = app.products.find(p => p.id === item.id);
@@ -1671,115 +1672,112 @@ document.addEventListener("DOMContentLoaded", () => {
                     }))
                 };
 
-                // Save to Firebase if available
+                const orderId = resolvedOrderId;
+                const SERVICE_ID = "service_r7f83sg";
+                const ADMIN_TEMPLATE = "template_n4wrqtj";
+                const PUB_KEY = "M2IU4HlY2wh4L6Fc0";
+
+                const emailParams = {
+                    order_id:        orderId,
+                    customer_name:   shippingDetails.name,
+                    customer_phone:  shippingDetails.phone,
+                    customer_email:  shippingDetails.email,
+                    product_name:    orderLineData.productName,
+                    product_size:    orderLineData.productSize,
+                    quantity:        orderLineData.totalQuantity,
+                    total_quantity:  orderLineData.totalQuantity,
+                    item_count:      orderLineData.itemCount,
+                    product_summary: orderLineData.productSummary,
+                    product_details: orderLineData.productDetails,
+                    product_details_html: orderLineData.productDetailsHtml,
+                    total_amount:    this._orderTotal,
+                    shipping_charge: shippingDetails.shippingCharge || 0,
+                    city:            shippingDetails.city,
+                    address:         `${shippingDetails.address}, ${shippingDetails.city}, ${shippingDetails.state} - ${shippingDetails.pincode}`,
+                    payment_status:  paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online'
+                };
+
+                const sheetPayload = {
+                    order_id:        orderId,
+                    timestamp:       orderData.createdAt,
+                    name:            shippingDetails.name,
+                    phone:           shippingDetails.phone,
+                    email:           shippingDetails.email,
+                    address:         shippingDetails.address,
+                    city:            shippingDetails.city,
+                    state:           shippingDetails.state,
+                    pincode:         shippingDetails.pincode,
+                    product_name:    orderLineData.productName,
+                    product_size:    orderLineData.productSize,
+                    quantity:        orderLineData.totalQuantity,
+                    total_quantity:  orderLineData.totalQuantity,
+                    item_count:      orderLineData.itemCount,
+                    product_summary: orderLineData.productSummary,
+                    product_details: orderLineData.productDetails,
+                    subtotal:        orderData.subtotal,
+                    shipping_charge: shippingDetails.shippingCharge || 0,
+                    discount:        orderData.discount || 0,
+                    total_amount:    orderData.total,
+                    payment_method:  paymentMethod,
+                    payment_status:  paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online',
+                    coupon_code:     orderData.couponCode || ''
+                };
+
                 if (db) {
-                    const orderRef = db.ref(`orders/${resolvedOrderId}`);
-                    const orderId = resolvedOrderId;
+                    try {
+                        const orderRef = db.ref(`orders/${resolvedOrderId}`);
+                        await orderRef.set(orderData);
+                    } catch (_) {
+                        app.showToast('Could not save your order. Please contact support.', 'error');
+                        return;
+                    }
 
-                    // 1. Save to global orders
-                    orderRef.set(orderData)
-                        .then(() => {
-                            // Send order confirmation emails after successful save
-                            const SERVICE_ID = "service_r7f83sg";
-                            const ADMIN_TEMPLATE = "template_n4wrqtj";
-                            const PUB_KEY = "M2IU4HlY2wh4L6Fc0";
-
-                            const emailParams = {
-                                order_id:        orderId,
-                                customer_name:   shippingDetails.name,
-                                customer_phone:  shippingDetails.phone,
-                                customer_email:  shippingDetails.email,
-                                product_name:    orderLineData.productName,
-                                product_size:    orderLineData.productSize,
-                                quantity:        orderLineData.totalQuantity,
-                                total_quantity:  orderLineData.totalQuantity,
-                                item_count:      orderLineData.itemCount,
-                                product_summary: orderLineData.productSummary,
-                                product_details: orderLineData.productDetails,
-                                total_amount:    this._orderTotal,
-                                shipping_charge: shippingDetails.shippingCharge || 0,
-                                city:            shippingDetails.city,
-                                address:         `${shippingDetails.address}, ${shippingDetails.city}, ${shippingDetails.state} - ${shippingDetails.pincode}`,
-                                payment_status:  paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online'
-                            };
-
-                            // CALL 1 - Admin Request
-                            fetch('https://api.emailjs.com/api/v1.0/email/send', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    service_id: SERVICE_ID,
-                                    template_id: ADMIN_TEMPLATE,
-                                    user_id: PUB_KEY,
-                                    template_params: emailParams
-                                })
-                            }).then(res => {
-                                if (!res.ok) {
-                                    app.showToast(`Order confirmed, but notification email failed. Please save order ID: ${orderId}`, 'error');
-                                }
-                            }).catch(() => {
-                                app.showToast(`Order confirmed, but notification email failed. Please save order ID: ${orderId}`, 'error');
-                            });
-
-                            // Note: Customer order confirmation is handled via
-                            // tracking-panel.html when owner ships the order.
-
-                            // --- GOOGLE SHEETS SYNC ---
-                            if (GOOGLE_SHEETS_URL && GOOGLE_SHEETS_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
-                                fetch(GOOGLE_SHEETS_URL, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        order_id:        orderId,
-                                        timestamp:       orderData.createdAt,
-                                        name:            shippingDetails.name,
-                                        phone:           shippingDetails.phone,
-                                        email:           shippingDetails.email,
-                                        address:         shippingDetails.address,
-                                        city:            shippingDetails.city,
-                                        state:           shippingDetails.state,
-                                        pincode:         shippingDetails.pincode,
-                                        product_name:    orderLineData.productName,
-                                        product_size:    orderLineData.productSize,
-                                        quantity:        orderLineData.totalQuantity,
-                                        total_quantity:  orderLineData.totalQuantity,
-                                        item_count:      orderLineData.itemCount,
-                                        product_summary: orderLineData.productSummary,
-                                        product_details: orderLineData.productDetails,
-                                        subtotal:        orderData.subtotal,
-                                        shipping_charge: shippingDetails.shippingCharge || 0,
-                                        discount:        orderData.discount || 0,
-                                        total_amount:    orderData.total,
-                                        payment_method:  paymentMethod,
-                                        payment_status:  paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online',
-                                        coupon_code:     orderData.couponCode || ''
-                                    })
-                                }).then(res => {
-                                    if (!res.ok) {
-                                        app.showToast('Order saved, but Google Sheets sync failed.', 'error');
-                                    }
-                                }).catch(() => {
-                                    app.showToast('Order saved, but Google Sheets sync failed.', 'error');
-                                });
-                            }
-                        })
-                        .catch(() => {
-                            app.showToast('Could not save your order. Please contact support.', 'error');
-                        });
-
-                    // 2. Save by phone number (for guest order tracking)
                     const phone = (shippingDetails.phone || '').replace(/[^0-9]/g, '');
                     if (phone) {
-                        db.ref(`orders-by-phone/${phone}/${orderId}`).set(orderData)
-                            .catch(() => {});
+                        db.ref(`orders-by-phone/${phone}/${orderId}`).set(orderData).catch(() => {});
                     }
-
-                    // 3. Save to user's orders if logged in
                     if (app.currentUser) {
-                        db.ref(`users/${app.currentUser.uid}/orders/${orderId}`).set(orderData)
-                            .catch(() => {});
+                        db.ref(`users/${app.currentUser.uid}/orders/${orderId}`).set(orderData).catch(() => {});
                     }
                 }
+
+                const syncTasks = [];
+                syncTasks.push(
+                    fetch('https://api.emailjs.com/api/v1.0/email/send', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            service_id: SERVICE_ID,
+                            template_id: ADMIN_TEMPLATE,
+                            user_id: PUB_KEY,
+                            template_params: emailParams
+                        })
+                    }).then(res => {
+                        if (!res.ok) {
+                            app.showToast(`Order confirmed, but notification email failed. Please save order ID: ${orderId}`, 'error');
+                        }
+                    }).catch(() => {
+                        app.showToast(`Order confirmed, but notification email failed. Please save order ID: ${orderId}`, 'error');
+                    })
+                );
+
+                if (GOOGLE_SHEETS_URL && GOOGLE_SHEETS_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+                    syncTasks.push(
+                        fetch(GOOGLE_SHEETS_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                            body: new URLSearchParams(sheetPayload)
+                        }).then(res => {
+                            if (!res.ok) {
+                                app.showToast('Order saved, but Google Sheets sync failed.', 'error');
+                            }
+                        }).catch(() => {
+                            app.showToast('Order saved, but Google Sheets sync failed.', 'error');
+                        })
+                    );
+                }
+
+                await Promise.allSettled(syncTasks);
 
                 sessionStorage.setItem('etremLastOrder', JSON.stringify(orderSuccessPayload));
 
