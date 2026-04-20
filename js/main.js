@@ -1802,7 +1802,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             if (!res.ok) {
                                 throw new Error(`Sheets sync failed: ${res.status}`);
                             }
-                        }).catch(() => {
+                        }).catch((error) => {
+                            console.warn('Google Sheets sync via CORS failed, retrying with no-cors mode.', error);
                             return fetch(GOOGLE_SHEETS_URL, {
                                 method: 'POST',
                                 mode: 'no-cors',
