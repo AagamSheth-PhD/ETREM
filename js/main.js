@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const EMAILJS_TEMPLATE_ID = "template_jlyjy5i";
     const EMAILJS_PUBLIC_KEY = "M2IU4HlY2wh4L6Fc0";
     // ⬇️ Google Apps Script deployed Web App URL
-    const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbyikqOUPBPz11d_JMN2qWoO_XiuCdd3oxAveJ65all5pZXFpUoOScmB1F0Phj6DhZDvbQ/exec";
+    const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzyySB6RqtITO7ZtWoFoMvTFCKx6TtklAxRlIS1F7f4hlZ6kgiSQFEM6nAXQ_KIdSOZ/exec";
 
     // Initialize Firebase
     let auth, db;
