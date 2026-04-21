@@ -1427,6 +1427,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     couponBtn.addEventListener('click', async () => {
                         const code = couponInput.value.trim().toUpperCase();
                         if (!code) return;
+                        if (!/^[A-Z0-9_-]+$/.test(code)) {
+                            if (couponMsg) { couponMsg.textContent = '❌ Invalid coupon format.'; couponMsg.style.color = '#f44336'; }
+                            return;
+                        }
 
                         couponBtn.textContent = 'Checking...';
                         couponBtn.disabled = true;
@@ -1435,6 +1439,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             const res = await fetch(
                                 'https://etrem-a3c78-default-rtdb.asia-southeast1.firebasedatabase.app/coupons/' + code + '.json'
                             );
+                            if (!res.ok) throw new Error(`Request failed: ${res.status}`);
                             const coupon = await res.json();
 
                             if (!coupon || !coupon.enabled) {

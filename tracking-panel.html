@@ -209,6 +209,7 @@
         const EMAILJS_PUBLIC_KEY  = "M2IU4HlY2wh4L6Fc0";
         const TRACKING_TEMPLATE   = "template_6oupid9"; // Customer template — for tracking emails
         const FIREBASE_DB_URL = "https://etrem-a3c78-default-rtdb.asia-southeast1.firebasedatabase.app";
+        const COUPON_CODE_PATTERN = /^[A-Z0-9_-]+$/;
 
         document.querySelectorAll('.panel-tab-btn').forEach(btn => {
           btn.addEventListener('click', () => {
@@ -231,6 +232,7 @@
 
         async function firebaseGet(path) {
           const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`);
+          if (!res.ok) throw new Error(`Request failed: ${res.status}`);
           return res.json();
         }
 
@@ -240,6 +242,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
           });
+          if (!res.ok) throw new Error(`Request failed: ${res.status}`);
           return res.json();
         }
 
@@ -247,6 +250,7 @@
           const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`, {
             method: 'DELETE'
           });
+          if (!res.ok) throw new Error(`Request failed: ${res.status}`);
           return res.json();
         }
 
@@ -271,14 +275,14 @@
                   </p>
                 </div>
                 <div style="display:flex;gap:0.5rem;align-items:center;">
-                  <button onclick="toggleCoupon('${key}', ${c.enabled})"
+                  <button onclick="toggleCoupon('${encodeURIComponent(key)}', ${c.enabled})"
                     style="padding:0.4rem 0.8rem;border-radius:4px;border:none;cursor:pointer;
                     font-size:0.75rem;font-weight:700;
                     background:${c.enabled ? '#4CAF50' : 'rgba(255,255,255,0.1)'};
                     color:${c.enabled ? '#000' : 'rgba(255,255,255,0.5)'};">
                     ${c.enabled ? '✅ ON' : '⏸ OFF'}
                   </button>
-                  <button onclick="deleteCoupon('${key}')"
+                  <button onclick="deleteCoupon('${encodeURIComponent(key)}')"
                     style="padding:0.4rem 0.8rem;border-radius:4px;border:none;cursor:pointer;
                     font-size:0.75rem;font-weight:700;background:rgba(244,67,54,0.2);color:#f44336;">
                     🗑️
@@ -299,6 +303,7 @@
           const status   = document.getElementById('coupon-add-status');
 
           if (!code) { status.textContent = '❌ Please enter a coupon code.'; status.className = 'status-msg error'; return; }
+          if (!COUPON_CODE_PATTERN.test(code)) { status.textContent = '❌ Use only A-Z, 0-9, _ or - in coupon code.'; status.className = 'status-msg error'; return; }
           if (!value || value <= 0) { status.textContent = '❌ Please enter a valid discount value.'; status.className = 'status-msg error'; return; }
           if (type === 'percent' && value > 100) { status.textContent = '❌ Percentage cannot exceed 100.'; status.className = 'status-msg error'; return; }
 
@@ -320,20 +325,23 @@
         });
 
         async function toggleCoupon(key, currentState) {
+          const decodedKey = decodeURIComponent(key);
           try {
-            await fetch(`${FIREBASE_DB_URL}/coupons/${key}/enabled.json`, {
+            const res = await fetch(`${FIREBASE_DB_URL}/coupons/${decodedKey}/enabled.json`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(!currentState)
             });
+            if (!res.ok) throw new Error(`Request failed: ${res.status}`);
             loadCoupons();
           } catch (err) { alert('Failed to update coupon.'); }
         }
 
         async function deleteCoupon(key) {
-          if (!confirm(`Delete coupon ${key}?`)) return;
+          const decodedKey = decodeURIComponent(key);
+          if (!confirm(`Delete coupon ${decodedKey}?`)) return;
           try {
-            await firebaseDelete(`coupons/${key}`);
+            await firebaseDelete(`coupons/${decodedKey}`);
             loadCoupons();
           } catch (err) { alert('Failed to delete coupon.'); }
         }
