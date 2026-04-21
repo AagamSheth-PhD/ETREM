@@ -121,46 +121,79 @@
         </div>
 
         <div class="panel-card">
-            <form id="tracking-form">
+            <div style="display:flex; gap: 1.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.12);">
+                <button type="button" class="panel-tab-btn active" data-tab="tracking-tab" style="background:none;border:none;padding:0.6rem 0;color:#d4a843;border-bottom:2px solid #d4a843;font-weight:700;letter-spacing:0.6px;cursor:pointer;">Tracking</button>
+                <button type="button" class="panel-tab-btn" data-tab="coupons-tab" style="background:none;border:none;padding:0.6rem 0;color:rgba(255,255,255,0.4);border-bottom:2px solid transparent;font-weight:700;letter-spacing:0.6px;cursor:pointer;">Coupons</button>
+            </div>
+
+            <div id="tracking-tab" class="panel-tab-content" style="display:block;">
+                <form id="tracking-form">
+                    <div class="form-group">
+                        <label for="t-customer-email">Customer Email *</label>
+                        <input type="email" id="t-customer-email" placeholder="customer@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="t-customer-name">Customer Name *</label>
+                        <input type="text" id="t-customer-name" placeholder="e.g. Rahul Shah" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="t-order-id">Order ID *</label>
+                        <input type="text" id="t-order-id" placeholder="e.g. -OLSfxQ..." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="t-courier">Courier Partner</label>
+                        <select id="t-courier">
+                            <option value="Delhivery">Delhivery</option>
+                            <option value="DTDC">DTDC</option>
+                            <option value="Blue Dart">Blue Dart</option>
+                            <option value="India Post">India Post</option>
+                            <option value="Ecom Express">Ecom Express</option>
+                            <option value="Xpressbees">Xpressbees</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="t-tracking-link">Tracking Link *</label>
+                        <input type="url" id="t-tracking-link" placeholder="https://www.delhivery.com/track/..." required>
+                        <button type="button" class="btn-secondary-panel" id="copy-tracking-link-btn" aria-label="Copy tracking link to clipboard">Copy Tracking Link</button>
+                    </div>
+                    <div class="form-group">
+                        <label for="t-estimated-delivery">Estimated Delivery</label>
+                        <input type="text" id="t-estimated-delivery" placeholder="e.g. 2–4 business days">
+                    </div>
+
+                    <hr class="divider">
+
+                    <button type="submit" class="btn-panel" id="send-tracking-btn">📧 Send Tracking Email</button>
+                    <p class="status-msg" id="tracking-status"></p>
+                </form>
+            </div>
+
+            <div id="coupons-tab" class="panel-tab-content" style="display:none;">
                 <div class="form-group">
-                    <label for="t-customer-email">Customer Email *</label>
-                    <input type="email" id="t-customer-email" placeholder="customer@email.com" required>
+                    <label for="c-code">Coupon Code *</label>
+                    <input type="text" id="c-code" placeholder="e.g. FNF25" maxlength="24">
                 </div>
                 <div class="form-group">
-                    <label for="t-customer-name">Customer Name *</label>
-                    <input type="text" id="t-customer-name" placeholder="e.g. Rahul Shah" required>
-                </div>
-                <div class="form-group">
-                    <label for="t-order-id">Order ID *</label>
-                    <input type="text" id="t-order-id" placeholder="e.g. -OLSfxQ..." required>
-                </div>
-                <div class="form-group">
-                    <label for="t-courier">Courier Partner</label>
-                    <select id="t-courier">
-                        <option value="Delhivery">Delhivery</option>
-                        <option value="DTDC">DTDC</option>
-                        <option value="Blue Dart">Blue Dart</option>
-                        <option value="India Post">India Post</option>
-                        <option value="Ecom Express">Ecom Express</option>
-                        <option value="Xpressbees">Xpressbees</option>
-                        <option value="Other">Other</option>
+                    <label for="c-type">Discount Type *</label>
+                    <select id="c-type">
+                        <option value="percent">Percentage (%)</option>
+                        <option value="flat">Flat Amount (₹)</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="t-tracking-link">Tracking Link *</label>
-                    <input type="url" id="t-tracking-link" placeholder="https://www.delhivery.com/track/..." required>
-                    <button type="button" class="btn-secondary-panel" id="copy-tracking-link-btn" aria-label="Copy tracking link to clipboard">Copy Tracking Link</button>
+                    <label for="c-value">Discount Value *</label>
+                    <input type="number" id="c-value" placeholder="e.g. 25" min="0" step="0.01">
                 </div>
                 <div class="form-group">
-                    <label for="t-estimated-delivery">Estimated Delivery</label>
-                    <input type="text" id="t-estimated-delivery" placeholder="e.g. 2–4 business days">
+                    <label for="c-minorder">Minimum Order Amount (₹)</label>
+                    <input type="number" id="c-minorder" placeholder="e.g. 999" min="0" step="0.01">
                 </div>
-
+                <button type="button" class="btn-panel" id="add-coupon-btn">➕ Add Coupon</button>
+                <p class="status-msg" id="coupon-add-status"></p>
                 <hr class="divider">
-
-                <button type="submit" class="btn-panel" id="send-tracking-btn">📧 Send Tracking Email</button>
-                <p class="status-msg" id="tracking-status"></p>
-            </form>
+                <div id="coupons-list"></div>
+            </div>
         </div>
 
         <div style="text-align:right;">
@@ -175,6 +208,135 @@
         const EMAILJS_SERVICE_ID  = "service_r7f83sg";
         const EMAILJS_PUBLIC_KEY  = "M2IU4HlY2wh4L6Fc0";
         const TRACKING_TEMPLATE   = "template_6oupid9"; // Customer template — for tracking emails
+        const FIREBASE_DB_URL = "https://etrem-a3c78-default-rtdb.asia-southeast1.firebasedatabase.app";
+
+        document.querySelectorAll('.panel-tab-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.panel-tab-btn').forEach(b => {
+              b.style.color = 'rgba(255,255,255,0.4)';
+              b.style.borderBottom = '2px solid transparent';
+              b.classList.remove('active');
+            });
+            document.querySelectorAll('.panel-tab-content').forEach(c => {
+              c.style.display = 'none';
+            });
+            btn.style.color = '#d4a843';
+            btn.style.borderBottom = '2px solid #d4a843';
+            btn.classList.add('active');
+            const target = document.getElementById(btn.dataset.tab);
+            if (target) target.style.display = 'block';
+            if (btn.dataset.tab === 'coupons-tab') loadCoupons();
+          });
+        });
+
+        async function firebaseGet(path) {
+          const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`);
+          return res.json();
+        }
+
+        async function firebaseSet(path, data) {
+          const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          return res.json();
+        }
+
+        async function firebaseDelete(path) {
+          const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`, {
+            method: 'DELETE'
+          });
+          return res.json();
+        }
+
+        async function loadCoupons() {
+          const list = document.getElementById('coupons-list');
+          list.innerHTML = '<p>Loading...</p>';
+          try {
+            const coupons = await firebaseGet('coupons');
+            if (!coupons || Object.keys(coupons).length === 0) {
+              list.innerHTML = '<p>No coupons yet. Add one above!</p>';
+              return;
+            }
+            list.innerHTML = Object.entries(coupons).map(([key, c]) => `
+              <div style="display:flex;justify-content:space-between;align-items:center;
+                padding:1rem;border:1px solid rgba(212,168,67,0.2);border-radius:8px;
+                margin-bottom:0.75rem;background:rgba(255,255,255,0.03);">
+                <div>
+                  <p style="font-weight:700;color:#d4a843;font-size:1rem;letter-spacing:1px;">${c.code}</p>
+                  <p style="color:rgba(255,255,255,0.6);font-size:0.8rem;margin-top:0.2rem;">
+                    ${c.type === 'percent' ? c.value + '% off' : '₹' + c.value + ' off'}
+                    ${c.minOrder > 0 ? ' • Min order ₹' + c.minOrder : ''}
+                  </p>
+                </div>
+                <div style="display:flex;gap:0.5rem;align-items:center;">
+                  <button onclick="toggleCoupon('${key}', ${c.enabled})"
+                    style="padding:0.4rem 0.8rem;border-radius:4px;border:none;cursor:pointer;
+                    font-size:0.75rem;font-weight:700;
+                    background:${c.enabled ? '#4CAF50' : 'rgba(255,255,255,0.1)'};
+                    color:${c.enabled ? '#000' : 'rgba(255,255,255,0.5)'};">
+                    ${c.enabled ? '✅ ON' : '⏸ OFF'}
+                  </button>
+                  <button onclick="deleteCoupon('${key}')"
+                    style="padding:0.4rem 0.8rem;border-radius:4px;border:none;cursor:pointer;
+                    font-size:0.75rem;font-weight:700;background:rgba(244,67,54,0.2);color:#f44336;">
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            `).join('');
+          } catch (err) {
+            list.innerHTML = '<p>Failed to load coupons.</p>';
+          }
+        }
+
+        document.getElementById('add-coupon-btn').addEventListener('click', async () => {
+          const code     = document.getElementById('c-code').value.trim().toUpperCase();
+          const type     = document.getElementById('c-type').value;
+          const value    = parseFloat(document.getElementById('c-value').value);
+          const minOrder = parseFloat(document.getElementById('c-minorder').value) || 0;
+          const status   = document.getElementById('coupon-add-status');
+
+          if (!code) { status.textContent = '❌ Please enter a coupon code.'; status.className = 'status-msg error'; return; }
+          if (!value || value <= 0) { status.textContent = '❌ Please enter a valid discount value.'; status.className = 'status-msg error'; return; }
+          if (type === 'percent' && value > 100) { status.textContent = '❌ Percentage cannot exceed 100.'; status.className = 'status-msg error'; return; }
+
+          try {
+            await firebaseSet(`coupons/${code}`, {
+              code, type, value, minOrder, enabled: true,
+              createdAt: new Date().toISOString()
+            });
+            status.textContent = `✅ Coupon ${code} added!`;
+            status.className = 'status-msg success';
+            document.getElementById('c-code').value = '';
+            document.getElementById('c-value').value = '';
+            document.getElementById('c-minorder').value = '';
+            loadCoupons();
+          } catch (err) {
+            status.textContent = '❌ Failed to add coupon.';
+            status.className = 'status-msg error';
+          }
+        });
+
+        async function toggleCoupon(key, currentState) {
+          try {
+            await fetch(`${FIREBASE_DB_URL}/coupons/${key}/enabled.json`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(!currentState)
+            });
+            loadCoupons();
+          } catch (err) { alert('Failed to update coupon.'); }
+        }
+
+        async function deleteCoupon(key) {
+          if (!confirm(`Delete coupon ${key}?`)) return;
+          try {
+            await firebaseDelete(`coupons/${key}`);
+            loadCoupons();
+          } catch (err) { alert('Failed to delete coupon.'); }
+        }
 
         // ---- LOCK / UNLOCK ----
         const lockScreen = document.getElementById('lock-screen');
