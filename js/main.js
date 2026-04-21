@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const EMAILJS_SERVICE_ID = "service_r7f83sg";
     const EMAILJS_TEMPLATE_ID = "template_jlyjy5i";
     const EMAILJS_PUBLIC_KEY = "M2IU4HlY2wh4L6Fc0";
-    const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzK42O3GFHIOVKKJbREDRIbcrCsyPvztuAlU3_rwICvpG3hXjLce1KDBHC6xyfpRM2CVQ/exec";
+    const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbxOJT3g88QQ8MxrMcOuwChic5ZyDyCs0ZBWx-gsQml2RXwdHDZWtI5GJtPj-aMa7aTN/exec";
 
     // Initialize Firebase
     let auth, db;
@@ -1812,17 +1812,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     syncTasks.push(
                         fetch(GOOGLE_SHEETS_URL, {
                             method: 'POST',
-                            mode: 'no-cors', // CRITICAL: Prevents browser from blocking the request
-                            cache: 'no-cache',
+                            redirect: 'follow',
                             headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                             },
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
                             body: new URLSearchParams(sheetPayload)
-                         }).catch((error) => {
-                        console.error('Google Sheets sync failed.', error);
-                  })
-              );
-            }
+                        }).catch((error) => {
+                            console.error('Google Sheets sync failed.', error);
+                        })
+                    );
+                }
 
                 await Promise.allSettled(syncTasks);
 
