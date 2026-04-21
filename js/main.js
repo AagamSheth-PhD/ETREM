@@ -263,7 +263,6 @@ document.addEventListener("DOMContentLoaded", () => {
                             <li><a href="./contact.html" class="nav-link">Contact</a></li>
                         </ul>
                         <div class="nav-actions">
-                            <a href="./profile.html" style="color: var(--accent-gold); font-size: 0.8rem; font-weight: 700; text-decoration: none; letter-spacing: 0.5px; white-space: nowrap;">TRACK ORDER</a>
                             <button class="nav-action-btn" id="search-icon" aria-label="Search">
                                 <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
                             </button>
@@ -1425,31 +1424,66 @@ document.addEventListener("DOMContentLoaded", () => {
                 const discountAmountEl = document.getElementById('checkout-discount');
 
                 if (couponBtn && couponInput) {
-                    couponBtn.addEventListener('click', () => {
+                    couponBtn.addEventListener('click', async () => {
                         const code = couponInput.value.trim().toUpperCase();
-                        if (code === 'FNF25') {
-                            discount = Math.round(subtotal * 0.25);
+                        if (!code) return;
+                        if (!/^[A-Z0-9_-]+$/.test(code)) {
+                            if (couponMsg) { couponMsg.textContent = '❌ Invalid coupon format.'; couponMsg.style.color = '#f44336'; }
+                            return;
+                        }
+
+                        couponBtn.textContent = 'Checking...';
+                        couponBtn.disabled = true;
+
+                        try {
+                            const res = await fetch(
+                                'https://etrem-a3c78-default-rtdb.asia-southeast1.firebasedatabase.app/coupons/' + code + '.json'
+                            );
+                            if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+                            const coupon = await res.json();
+
+                            if (!coupon || !coupon.enabled) {
+                                if (couponMsg) { couponMsg.textContent = '❌ Invalid or expired coupon code.'; couponMsg.style.color = '#f44336'; }
+                                couponBtn.textContent = 'Apply';
+                                couponBtn.disabled = false;
+                                return;
+                            }
+
+                            if (coupon.minOrder > 0 && subtotal < coupon.minOrder) {
+                                if (couponMsg) { couponMsg.textContent = `❌ Minimum order ₹${coupon.minOrder} required.`; couponMsg.style.color = '#f44336'; }
+                                couponBtn.textContent = 'Apply';
+                                couponBtn.disabled = false;
+                                return;
+                            }
+
+                            if (coupon.type === 'percent') {
+                                discount = Math.round(subtotal * (coupon.value / 100));
+                            } else {
+                                discount = Math.min(coupon.value, subtotal);
+                            }
+
                             grandTotal = subtotal - discount + this._shipping;
                             this._discount = discount;
                             this._orderTotal = grandTotal;
-                            this._couponCode = 'FNF25';
+                            this._couponCode = code;
 
                             if (discountRow) discountRow.style.display = 'flex';
-                            if (discountAmountEl) discountAmountEl.textContent = `- \u20b9${discount}`;
-                            if (totalEl) totalEl.textContent = `\u20b9${grandTotal}`;
+                            if (discountAmountEl) discountAmountEl.textContent = `- ₹${discount}`;
+                            if (totalEl) totalEl.textContent = `₹${grandTotal}`;
                             if (couponMsg) {
-                                couponMsg.textContent = '\u2705 Coupon applied! 25% off.';
+                                const label = coupon.type === 'percent' ? `${coupon.value}% off` : `₹${coupon.value} off`;
+                                couponMsg.textContent = `✅ Coupon applied! ${label}`;
                                 couponMsg.style.color = '#4CAF50';
                             }
                             couponInput.disabled = true;
                             couponBtn.disabled = true;
-                            couponBtn.textContent = 'Applied';
-                            app.showToast('Coupon FNF25 applied! 25% discount.');
-                        } else {
-                            if (couponMsg) {
-                                couponMsg.textContent = '\u274c Invalid coupon code.';
-                                couponMsg.style.color = '#f44336';
-                            }
+                            couponBtn.textContent = 'Applied ✓';
+                            app.showToast(`Coupon ${code} applied!`);
+
+                        } catch (err) {
+                            if (couponMsg) { couponMsg.textContent = '❌ Could not verify coupon. Try again.'; couponMsg.style.color = '#f44336'; }
+                            couponBtn.textContent = 'Apply';
+                            couponBtn.disabled = false;
                         }
                     });
                 }
