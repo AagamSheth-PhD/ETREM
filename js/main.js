@@ -1683,8 +1683,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 fetch(SHEETS_URL, {
                     method: 'POST',
                     mode: 'no-cors',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: sheetsPayload
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ data: sheetsPayload })
                 }).then(() => console.log('Sheets sync request sent ✅'))
                   .catch(e => console.error('Sheets sync error:', e));
 
