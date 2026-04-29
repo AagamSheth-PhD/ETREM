@@ -1348,7 +1348,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 discount = Math.min(coupon.value, subtotal);
                             }
 
-                            grandTotal = subtotal - discount + (this._shipping || shipping);
+                            grandTotal = subtotal - discount + this._shipping;
                             this._discount = discount;
                             this._orderTotal = grandTotal;
                             this._couponCode = code;
@@ -1680,11 +1680,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     product_summary: productSummary,
                     total_qty:       totalQty
                 });
+                const formData = new FormData();
+                formData.append('data', sheetsPayload);
                 fetch(SHEETS_URL, {
                     method: 'POST',
                     mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({ data: sheetsPayload })
+                    body: formData
                 }).then(() => console.log('Sheets sync request sent ✅'))
                   .catch(e => console.error('Sheets sync error:', e));
 
