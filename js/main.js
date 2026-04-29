@@ -1291,77 +1291,89 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (citySelect) citySelect.addEventListener('change', updateShipping);
 
-                // --- COUPON CODE SYSTEM ---
+                // --- COUPON CODE SYSTEM (reads from Firebase) ---
                 const couponInput = document.getElementById('coupon-input');
                 const couponBtn = document.getElementById('apply-coupon-btn');
                 const couponMsg = document.getElementById('coupon-message');
                 const discountRow = document.getElementById('discount-row');
                 const discountAmountEl = document.getElementById('checkout-discount');
 
-                // Coupon definitions — add/remove coupons here
-                const COUPONS = {
-                    'FNF25': {
-                        discount: 0.25,           // 25% off
-                        label: '25% off',
-                        validFrom: new Date('2025-01-01T00:00:00'),
-                        validUntil: new Date('2099-12-31T23:59:59')   // never expires
-                    }
-                };
-
                 const formatValidity = (until) => {
                     const now = new Date();
-                    const diffMs = until - now;
-                    if (diffMs <= 0) return null; // expired
+                    const diffMs = new Date(until) - now;
+                    if (diffMs <= 0) return null;
                     const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
                     const diffDays = Math.floor(diffHrs / 24);
                     const remHrs = diffHrs % 24;
-                    if (diffDays > 0) return `Valid for ${diffDays} day${diffDays > 1 ? 's' : ''} and ${remHrs} hour${remHrs !== 1 ? 's' : ''}`;
+                    if (diffDays > 0) return `Valid for ${diffDays} day${diffDays > 1 ? 's' : ''} and ${remHrs} hr${remHrs !== 1 ? 's' : ''}`;
                     return `Valid for ${diffHrs} hour${diffHrs !== 1 ? 's' : ''} only!`;
                 };
 
                 if (couponBtn && couponInput) {
-                    couponBtn.addEventListener('click', () => {
+                    couponBtn.addEventListener('click', async () => {
                         const code = couponInput.value.trim().toUpperCase();
-                        const coupon = COUPONS[code];
-                        const now = new Date();
-
-                        if (!coupon) {
-                            if (couponMsg) {
-                                couponMsg.textContent = '\u274c Invalid coupon code.';
-                                couponMsg.style.color = '#f44336';
-                            }
-                            return;
-                        }
-
-                        if (now < coupon.validFrom || now > coupon.validUntil) {
-                            if (couponMsg) {
-                                couponMsg.textContent = '\u274c Coupon has expired.';
-                                couponMsg.style.color = '#f44336';
-                            }
-                            return;
-                        }
-
-                        // Valid coupon
-                        discount = Math.round(subtotal * coupon.discount);
-                        grandTotal = subtotal - discount + (this._shipping || shipping);
-                        this._discount = discount;
-                        this._orderTotal = grandTotal;
-                        this._couponCode = code;
-
-                        const validity = formatValidity(coupon.validUntil);
-                        const validityNote = validity ? ` (${validity})` : '';
-
-                        if (discountRow) discountRow.style.display = 'flex';
-                        if (discountAmountEl) discountAmountEl.textContent = `- \u20b9${discount}`;
-                        if (totalEl) totalEl.textContent = `\u20b9${grandTotal}`;
-                        if (couponMsg) {
-                            couponMsg.textContent = `\u2705 ${coupon.label} applied!${validityNote}`;
-                            couponMsg.style.color = '#4CAF50';
-                        }
-                        couponInput.disabled = true;
+                        if (!code) return;
                         couponBtn.disabled = true;
-                        couponBtn.textContent = 'Applied';
-                        app.showToast(`Coupon ${code} applied! ${coupon.label}`);
+                        couponBtn.textContent = 'Checking...';
+
+                        try {
+                            // Read coupon from Firebase
+                            if (!db) throw new Error('no-db');
+                            const snap = await db.ref('coupons/' + code).once('value');
+                            const coupon = snap.val();
+
+                            if (!coupon || !coupon.active) {
+                                if (couponMsg) { couponMsg.textContent = '\u274c Invalid coupon code.'; couponMsg.style.color = '#f44336'; }
+                                couponBtn.disabled = false; couponBtn.textContent = 'Apply';
+                                return;
+                            }
+
+                            const now = new Date();
+                            if (coupon.validFrom && now < new Date(coupon.validFrom)) {
+                                if (couponMsg) { couponMsg.textContent = '\u274c This coupon is not active yet.'; couponMsg.style.color = '#f44336'; }
+                                couponBtn.disabled = false; couponBtn.textContent = 'Apply';
+                                return;
+                            }
+                            if (coupon.validUntil && now > new Date(coupon.validUntil)) {
+                                if (couponMsg) { couponMsg.textContent = '\u274c Coupon has expired.'; couponMsg.style.color = '#f44336'; }
+                                couponBtn.disabled = false; couponBtn.textContent = 'Apply';
+                                return;
+                            }
+
+                            // Calculate discount
+                            if (coupon.type === 'percent') {
+                                discount = Math.round(subtotal * (coupon.value / 100));
+                            } else {
+                                // fixed ₹ amount
+                                discount = Math.min(coupon.value, subtotal);
+                            }
+
+                            grandTotal = subtotal - discount + (this._shipping || shipping);
+                            this._discount = discount;
+                            this._orderTotal = grandTotal;
+                            this._couponCode = code;
+
+                            const validity = coupon.validUntil ? formatValidity(coupon.validUntil) : null;
+                            const validityNote = validity ? ` (${validity})` : '';
+                            const label = coupon.type === 'percent' ? `${coupon.value}% off` : `\u20b9${coupon.value} off`;
+
+                            if (discountRow) discountRow.style.display = 'flex';
+                            if (discountAmountEl) discountAmountEl.textContent = `- \u20b9${discount}`;
+                            if (totalEl) totalEl.textContent = `\u20b9${grandTotal}`;
+                            if (couponMsg) {
+                                couponMsg.textContent = `\u2705 ${label} applied!${validityNote}`;
+                                couponMsg.style.color = '#4CAF50';
+                            }
+                            couponInput.disabled = true;
+                            couponBtn.disabled = true;
+                            couponBtn.textContent = 'Applied';
+                            app.showToast(`Coupon ${code} applied! ${label}`);
+
+                        } catch (err) {
+                            console.error('Coupon check error:', err);
+                            if (couponMsg) { couponMsg.textContent = '\u274c Could not verify coupon. Try again.'; couponMsg.style.color = '#f44336'; }
+                            couponBtn.disabled = false; couponBtn.textContent = 'Apply';
+                        }
                     });
                 }
 
@@ -1671,7 +1683,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 fetch(SHEETS_URL, {
                     method: 'POST',
                     mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'text/plain' },
                     body: sheetsPayload
                 }).then(() => console.log('Sheets sync request sent ✅'))
                   .catch(e => console.error('Sheets sync error:', e));
