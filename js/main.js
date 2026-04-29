@@ -1298,33 +1298,70 @@ document.addEventListener("DOMContentLoaded", () => {
                 const discountRow = document.getElementById('discount-row');
                 const discountAmountEl = document.getElementById('checkout-discount');
 
+                // Coupon definitions — add/remove coupons here
+                const COUPONS = {
+                    'FNF25': {
+                        discount: 0.25,           // 25% off
+                        label: '25% off',
+                        validFrom: new Date('2025-01-01T00:00:00'),
+                        validUntil: new Date('2099-12-31T23:59:59')   // never expires
+                    }
+                };
+
+                const formatValidity = (until) => {
+                    const now = new Date();
+                    const diffMs = until - now;
+                    if (diffMs <= 0) return null; // expired
+                    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+                    const diffDays = Math.floor(diffHrs / 24);
+                    const remHrs = diffHrs % 24;
+                    if (diffDays > 0) return `Valid for ${diffDays} day${diffDays > 1 ? 's' : ''} and ${remHrs} hour${remHrs !== 1 ? 's' : ''}`;
+                    return `Valid for ${diffHrs} hour${diffHrs !== 1 ? 's' : ''} only!`;
+                };
+
                 if (couponBtn && couponInput) {
                     couponBtn.addEventListener('click', () => {
                         const code = couponInput.value.trim().toUpperCase();
-                        if (code === 'FNF25') {
-                            discount = Math.round(subtotal * 0.25);
-                            grandTotal = subtotal - discount + shipping;
-                            this._discount = discount;
-                            this._orderTotal = grandTotal;
-                            this._couponCode = 'FNF25';
+                        const coupon = COUPONS[code];
+                        const now = new Date();
 
-                            if (discountRow) discountRow.style.display = 'flex';
-                            if (discountAmountEl) discountAmountEl.textContent = `- \u20b9${discount}`;
-                            if (totalEl) totalEl.textContent = `\u20b9${grandTotal}`;
-                            if (couponMsg) {
-                                couponMsg.textContent = '\u2705 Coupon applied! 25% off.';
-                                couponMsg.style.color = '#4CAF50';
-                            }
-                            couponInput.disabled = true;
-                            couponBtn.disabled = true;
-                            couponBtn.textContent = 'Applied';
-                            app.showToast('Coupon FNF25 applied! 25% discount.');
-                        } else {
+                        if (!coupon) {
                             if (couponMsg) {
                                 couponMsg.textContent = '\u274c Invalid coupon code.';
                                 couponMsg.style.color = '#f44336';
                             }
+                            return;
                         }
+
+                        if (now < coupon.validFrom || now > coupon.validUntil) {
+                            if (couponMsg) {
+                                couponMsg.textContent = '\u274c Coupon has expired.';
+                                couponMsg.style.color = '#f44336';
+                            }
+                            return;
+                        }
+
+                        // Valid coupon
+                        discount = Math.round(subtotal * coupon.discount);
+                        grandTotal = subtotal - discount + (this._shipping || shipping);
+                        this._discount = discount;
+                        this._orderTotal = grandTotal;
+                        this._couponCode = code;
+
+                        const validity = formatValidity(coupon.validUntil);
+                        const validityNote = validity ? ` (${validity})` : '';
+
+                        if (discountRow) discountRow.style.display = 'flex';
+                        if (discountAmountEl) discountAmountEl.textContent = `- \u20b9${discount}`;
+                        if (totalEl) totalEl.textContent = `\u20b9${grandTotal}`;
+                        if (couponMsg) {
+                            couponMsg.textContent = `\u2705 ${coupon.label} applied!${validityNote}`;
+                            couponMsg.style.color = '#4CAF50';
+                        }
+                        couponInput.disabled = true;
+                        couponBtn.disabled = true;
+                        couponBtn.textContent = 'Applied';
+                        app.showToast(`Coupon ${code} applied! ${coupon.label}`);
                     });
                 }
 
@@ -1536,79 +1573,113 @@ document.addEventListener("DOMContentLoaded", () => {
                     phone: shippingDetails.phone || ''
                 };
 
-                // --- EMAIL PARAMS (built once, used for both admin + customer) ---
-                const SERVICE_ID = "service_r7f83sg";
-                const ADMIN_TEMPLATE = "template_n4wrqtj";
-                const CUSTOMER_TEMPLATE = "template_6oupid9";
-                const PUB_KEY = "M2IU4HlY2wh4L6Fc0";
+                // ── NEW GOOGLE_SHEETS_URL ──────────────────────────────────
+                const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxOJT3g88QQ8MxrMcOuwChic5ZyDyCs0ZBWx-gsQml2RXwdHDZWtI5GJtPj-aMa7aTN/exec';
 
-                const firstItem = orderData.items[0] || {};
-                const productLines = orderData.items.map(i =>
+                // ── BUILD SHARED DATA ──────────────────────────────────────
+                const SERVICE_ID = 'service_r7f83sg';
+                const ADMIN_TEMPLATE = 'template_n4wrqtj';
+                const CUSTOMER_TEMPLATE = 'template_6oupid9';
+                const PUB_KEY = 'M2IU4HlY2wh4L6Fc0';
+
+                const totalQty = orderData.items.reduce((s, i) => s + i.quantity, 0);
+                const productSummary = orderData.items.map(i => `${i.name} (${i.volume || 'N/A'})`).join(', ');
+                // HTML list for admin email
+                const productDetailsHtml = orderData.items.map(i =>
                     `${i.name} (${i.volume || 'N/A'}) x${i.quantity} — \u20b9${i.price * i.quantity}`
                 ).join('\n');
+                const fullAddress = `${shippingDetails.address}, ${shippingDetails.city}, ${shippingDetails.state} - ${shippingDetails.pincode}`;
 
-                const emailParams = {
-                    order_id:        orderId,
-                    customer_name:   shippingDetails.name,
-                    customer_phone:  shippingDetails.phone,
-                    customer_email:  shippingDetails.email,
-                    to_email:        shippingDetails.email,
-                    product_name:    firstItem.name || '',
-                    product_size:    firstItem.volume || '',
-                    quantity:        firstItem.quantity || 1,
-                    product_details: productLines,
-                    total_amount:    this._orderTotal,
-                    shipping_charge: shippingDetails.shippingCharge || 0,
-                    city:            shippingDetails.city,
-                    address:         `${shippingDetails.address}, ${shippingDetails.city}, ${shippingDetails.state} - ${shippingDetails.pincode}`,
-                    payment_status:  paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online'
+                // ── ADMIN EMAIL (template_n4wrqtj) ─────────────────────────
+                const adminParams = {
+                    order_id:            orderId,
+                    product_summary:     productSummary,
+                    product_size:        orderData.items.map(i => i.volume || 'N/A').join(', '),
+                    total_quantity:      totalQty,
+                    product_details_html: productDetailsHtml,
+                    total_amount:        this._orderTotal,
+                    shipping_charge:     shippingDetails.shippingCharge || 0,
+                    payment_status:      paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online',
+                    customer_name:       shippingDetails.name,
+                    customer_phone:      shippingDetails.phone,
+                    customer_email:      shippingDetails.email,
+                    address:             fullAddress
                 };
 
-                const sendEmail = (templateId) => fetch('https://api.emailjs.com/api/v1.0/email/send', {
+                // ── CUSTOMER EMAIL (template_6oupid9) ──────────────────────
+                const itemLines = orderData.items.map(i =>
+                    `\u2022 ${i.name} (${i.volume || 'N/A'}) x${i.quantity} — \u20b9${i.price * i.quantity}`
+                ).join('\n');
+                const customerParams = {
+                    to_name:     shippingDetails.name,
+                    to_email:    shippingDetails.email,
+                    message_body:
+`Thank you for your order! Here are your order details:\n\n` +
+`Order ID: #${orderId}\n` +
+`Items:\n${itemLines}\n\n` +
+`Subtotal: \u20b9${orderData.subtotal}\n` +
+`Shipping: \u20b9${shippingDetails.shippingCharge || 0}\n` +
+(orderData.discount ? `Discount: -\u20b9${orderData.discount}\n` : '') +
+`Total: \u20b9${this._orderTotal}\n\n` +
+`Payment: ${paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online'}\n\n` +
+`Delivery Address:\n${fullAddress}\n\n` +
+`Expected delivery: 5\u20137 business days.\n` +
+`For support, WhatsApp us at +91 7069 122 218.`
+                };
+
+                const sendEmail = (templateId, params) => fetch('https://api.emailjs.com/api/v1.0/email/send', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ service_id: SERVICE_ID, template_id: templateId, user_id: PUB_KEY, template_params: emailParams })
+                    body: JSON.stringify({ service_id: SERVICE_ID, template_id: templateId, user_id: PUB_KEY, template_params: params })
                 });
 
-                // CALL 1 – Admin notification
-                sendEmail(ADMIN_TEMPLATE)
-                    .then(r => r.ok ? console.log('Admin email sent ✅') : console.error('Admin email failed', r.status))
+                sendEmail(ADMIN_TEMPLATE, adminParams)
+                    .then(r => r.ok ? console.log('Admin email sent ✅') : r.text().then(t => console.error('Admin email failed', r.status, t)))
                     .catch(e => console.error('Admin email error:', e));
 
-                // CALL 2 – Customer confirmation (immediate)
-                sendEmail(CUSTOMER_TEMPLATE)
-                    .then(r => r.ok ? console.log('Customer email sent ✅') : console.error('Customer email failed', r.status))
+                sendEmail(CUSTOMER_TEMPLATE, customerParams)
+                    .then(r => r.ok ? console.log('Customer email sent ✅') : r.text().then(t => console.error('Customer email failed', r.status, t)))
                     .catch(e => console.error('Customer email error:', e));
 
-                // Save to Firebase if available
+                // ── GOOGLE SHEETS SYNC (always fires, outside Firebase) ────
+                const fi = orderData.items[0] || {};
+                fetch(SHEETS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        'Order ID':        orderId,
+                        'Timestamp':       orderData.createdAt,
+                        'Name':            shippingDetails.name,
+                        'Phone':           shippingDetails.phone,
+                        'Email':           shippingDetails.email,
+                        'Address':         shippingDetails.address,
+                        'City':            shippingDetails.city,
+                        'State':           shippingDetails.state,
+                        'Pincode':         shippingDetails.pincode,
+                        'Product':         fi.name || '',
+                        'Size':            fi.volume || '',
+                        'Qty':             fi.quantity || 1,
+                        'Product Details': orderData.items.map(i => `${i.name} (${i.volume||'N/A'}) x${i.quantity}`).join('; '),
+                        'Subtotal':        orderData.subtotal,
+                        'Shipping':        shippingDetails.shippingCharge || 0,
+                        'Discount':        orderData.discount || 0,
+                        'Total':           orderData.total,
+                        'Payment Method':  paymentMethod,
+                        'Payment Status':  paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online',
+                        'Coupon':          orderData.couponCode || '',
+                        'Item Count':      orderData.items.length,
+                        'Product Summary': productSummary,
+                        'Total Qty':       totalQty
+                    })
+                }).then(r => r.ok ? console.log('Sheets sync ✅') : r.text().then(t => console.error('Sheets sync failed', r.status, t)))
+                  .catch(e => console.error('Sheets sync error:', e));
+
+                // ── FIREBASE SAVE ──────────────────────────────────────────
                 if (db) {
                     const orderRef = db.ref('orders/' + orderId);
                     orderRef.set(orderData)
-                        .then(() => {
-                            console.log('Order saved to Firebase:', orderId);
-                            // Google Sheets Sync
-                            if (GOOGLE_SHEETS_URL && GOOGLE_SHEETS_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
-                                const fi = orderData.items[0] || {};
-                                fetch(GOOGLE_SHEETS_URL, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        order_id: orderId, timestamp: orderData.createdAt,
-                                        name: shippingDetails.name, phone: shippingDetails.phone, email: shippingDetails.email,
-                                        address: shippingDetails.address, city: shippingDetails.city, state: shippingDetails.state, pincode: shippingDetails.pincode,
-                                        product_name: fi.name || '', product_size: fi.volume || '', quantity: fi.quantity || 1,
-                                        product_details: orderData.items.map(i => `${i.name} (${i.volume||'N/A'}) x${i.quantity}`).join('; '),
-                                        subtotal: orderData.subtotal, shipping_charge: shippingDetails.shippingCharge || 0,
-                                        discount: orderData.discount || 0, total_amount: orderData.total,
-                                        payment_method: paymentMethod, payment_status: paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online',
-                                        coupon_code: orderData.couponCode || ''
-                                    })
-                                }).then(r => r.ok ? console.log('Sheets sync ✅') : console.error('Sheets sync failed', r.status))
-                                  .catch(e => console.error('Sheets sync error:', e));
-                            }
-                        })
+                        .then(() => console.log('Firebase save ✅', orderId))
                         .catch(e => console.error('Firebase save error:', e));
-
                     const phone = (shippingDetails.phone || '').replace(/[^0-9]/g, '');
                     if (phone) db.ref(`orders-by-phone/${phone}/${orderId}`).set(orderData).catch(() => {});
                     if (app.currentUser) db.ref(`users/${app.currentUser.uid}/orders/${orderId}`).set(orderData).catch(() => {});
