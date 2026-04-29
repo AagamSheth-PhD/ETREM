@@ -1682,7 +1682,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
                 const formData = new FormData();
                 formData.append('data', sheetsPayload);
-                fetch(SHEETS_URL, {
+                fetch(GOOGLE_SHEETS_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     body: formData
