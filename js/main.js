@@ -1,4 +1,3 @@
-// v2.1 - updated sheets URL
 // --- ETREM main.js – Complete Working Version ---
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -18,7 +17,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const EMAILJS_SERVICE_ID = "service_r7f83sg";
     const EMAILJS_TEMPLATE_ID = "template_jlyjy5i";
     const EMAILJS_PUBLIC_KEY = "M2IU4HlY2wh4L6Fc0";
-    const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbxOJT3g88QQ8MxrMcOuwChic5ZyDyCs0ZBWx-gsQml2RXwdHDZWtI5GJtPj-aMa7aTN/exec";
+    // ⬇️ Google Apps Script deployed Web App URL
+    const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbyikqOUPBPz11d_JMN2qWoO_XiuCdd3oxAveJ65all5pZXFpUoOScmB1F0Phj6DhZDvbQ/exec";
 
     // Initialize Firebase
     let auth, db;
@@ -140,110 +140,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }, 3000);
         },
 
-        deriveVolumeFromProductId(productId = '') {
-            if (typeof productId !== 'string') return '';
-            if (productId.endsWith('-20') || productId.endsWith('-20ml')) return '20ml';
-            if (productId.endsWith('-50') || productId.endsWith('-50ml')) return '50ml';
-            return '';
-        },
-
-        normalizeVolume(productId, volume = '') {
-            const cleanVolume = String(volume || '').trim();
-            return cleanVolume || this.deriveVolumeFromProductId(productId);
-        },
-
-        copyTextToClipboard(text) {
-            if (!text) return Promise.reject(new Error('Nothing to copy'));
-            if (navigator.clipboard && window.isSecureContext) {
-                return navigator.clipboard.writeText(text);
-            }
-
-            return new Promise((resolve, reject) => {
-                const textarea = document.createElement('textarea');
-                textarea.value = text;
-                textarea.setAttribute('readonly', '');
-                textarea.style.position = 'fixed';
-                textarea.style.left = '-9999px';
-                document.body.appendChild(textarea);
-                textarea.select();
-                try {
-                    const copied = document.execCommand('copy');
-                    document.body.removeChild(textarea);
-                    if (copied) resolve();
-                    else reject(new Error('Copy command failed'));
-                } catch (err) {
-                    document.body.removeChild(textarea);
-                    reject(err);
-                }
-            });
-        },
-
-        buildOrderItemDetails(items = []) {
-            const safeItems = Array.isArray(items) ? items : [];
-            const productDetailsLines = safeItems.map(i => {
-                const volumeLabel = i.volume || this.deriveVolumeFromProductId(i.id) || 'N/A';
-                const quantity = Number(i.quantity) > 0 ? Number(i.quantity) : 1;
-                const price = Number(i.price) > 0 ? Number(i.price) : 0;
-                const lineTotal = price * quantity;
-                return `${i.name} (${volumeLabel}) x${quantity} — ₹${lineTotal}`;
-            });
-            const totalQuantity = safeItems.reduce((sum, i) => sum + (Number(i.quantity) > 0 ? Number(i.quantity) : 1), 0);
-            const itemCount = safeItems.length;
-            const uniqueNames = [...new Set(safeItems.map(i => i.name).filter(Boolean))];
-            const productSummary = uniqueNames.join(', ');
-            const sizeList = [...new Set(safeItems.map(i => i.volume || this.deriveVolumeFromProductId(i.id)).filter(Boolean))].join(', ');
-            const firstItem = safeItems[0] || {};
-
-            return {
-                productDetails: productDetailsLines.join('\n'),
-                productDetailsHtml: productDetailsLines.join('<br>'),
-                totalQuantity,
-                itemCount,
-                productSummary,
-                productName: itemCount > 1 ? (productSummary || 'Multiple Items') : (firstItem.name || ''),
-                productSize: itemCount > 1 ? (sizeList || 'Mixed') : (firstItem.volume || this.deriveVolumeFromProductId(firstItem.id) || ''),
-                sizeList
-            };
-        },
-
-        initProductPageRating(page) {
-            if (!page || !db) return;
-            const productData = page.dataset.productId || '';
-            const directMatch = this.products.find(p => p.id === productData);
-            const activeVolume = document.querySelector('.volume-btn.active')?.dataset.volume || '';
-            const fallbackVolume = directMatch ? '' : (activeVolume || '50ml');
-            const volumeSuffix = fallbackVolume === '20ml' ? '-20' : '-50';
-            const ratingProductId = directMatch ? productData : `${productData}${volumeSuffix}`;
-            if (!ratingProductId) return;
-
-            const productInfo = page.querySelector('.product-info');
-            if (!productInfo || productInfo.querySelector('.pdp-rating-widget')) return;
-
-            const wrapper = document.createElement('div');
-            wrapper.className = 'pdp-rating-widget';
-            wrapper.style.margin = '0.9rem 0 1.2rem';
-            wrapper.innerHTML = `
-                <div class="product-rating" id="rating-${ratingProductId}">
-                    <span class="rating-count">Loading ratings...</span>
-                </div>
-                <div class="stars-input" data-product-id="${ratingProductId}" title="Rate this product" style="margin-top:0.45rem;">
-                    <span data-val="1">★</span>
-                    <span data-val="2">★</span>
-                    <span data-val="3">★</span>
-                    <span data-val="4">★</span>
-                    <span data-val="5">★</span>
-                </div>
-            `;
-            const heading = productInfo.querySelector('h1');
-            if (heading?.nextSibling) {
-                heading.parentNode.insertBefore(wrapper, heading.nextSibling);
-            } else {
-                productInfo.appendChild(wrapper);
-            }
-
-            this.shop.initRatingsAndShare(wrapper);
-        },
-
         // --- 3. RENDER HEADER & FOOTER ---
         renderSharedComponents() {
             // ---- HEADER ----
@@ -263,6 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <li><a href="./contact.html" class="nav-link">Contact</a></li>
                         </ul>
                         <div class="nav-actions">
+                            <a href="./profile.html" style="color: var(--accent-gold); font-size: 0.8rem; font-weight: 700; text-decoration: none; letter-spacing: 0.5px; white-space: nowrap;">TRACK ORDER</a>
                             <button class="nav-action-btn" id="search-icon" aria-label="Search">
                                 <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
                             </button>
@@ -380,7 +277,6 @@ document.addEventListener("DOMContentLoaded", () => {
                             <p>&copy; ${new Date().getFullYear()} ETREM – The Naked Perfume. All rights reserved.</p>
                             <p id="dev-credit">Crafted with ♥ in India</p>
                             <p class="dev-attribution">Designed and Developed by <a href="https://digitalorigami.in" target="_blank" rel="noopener">Digital Origami</a></p>
-                            <a href="./tracking-panel.html" aria-label="Tracking Panel" style="opacity:0.2;text-decoration:none;color:inherit;font-size:0.7rem;line-height:1;">•</a>
                         </div>
                     </div>
                 `;
@@ -393,15 +289,27 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.body.appendChild(tc);
             }
 
-            // Scroll-based header background toggle
+            // Scroll-based header background + hide-on-scroll
             const headerEl = document.querySelector('.header');
-            if (headerEl && !headerEl.classList.contains('solid')) {
+            if (headerEl) {
+                let lastScrollY = window.scrollY;
                 window.addEventListener('scroll', () => {
-                    if (window.scrollY > 50) {
+                    const currentScrollY = window.scrollY;
+                    // Background toggle
+                    if (currentScrollY > 50) {
                         headerEl.classList.add('scrolled');
                     } else {
                         headerEl.classList.remove('scrolled');
                     }
+                    // Hide on scroll down, show on scroll up
+                    if (!headerEl.classList.contains('solid')) {
+                        if (currentScrollY > lastScrollY && currentScrollY > 100) {
+                            headerEl.classList.add('header-hidden');
+                        } else {
+                            headerEl.classList.remove('header-hidden');
+                        }
+                    }
+                    lastScrollY = currentScrollY;
                 });
             }
         },
@@ -553,22 +461,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 addToCartPDP.addEventListener('click', () => {
                     const productData = page.dataset.productId;
                     const quantity = parseInt(qtyInput ? qtyInput.value : 1);
-                    const rawVolume = document.querySelector('.volume-btn.active')?.dataset.volume || '';
 
                     // Check if the data-product-id is already a valid product ID
                     // (combo and trial pages use the full ID directly)
                     const directMatch = app.products.find(p => p.id === productData);
                     if (directMatch) {
-                        app.cartManager.add(productData, quantity, rawVolume);
+                        app.cartManager.add(productData, quantity);
                         return;
                     }
 
                     // For individual perfume pages with volume selectors
-                    const selectedVolume = rawVolume || '50ml';
-                    const volumeSuffix = selectedVolume === '20ml' ? '-20' : '-50';
+                    const activeVolume = document.querySelector('.volume-btn.active');
+                    const volume = activeVolume ? activeVolume.dataset.volume : '50ml';
+                    const volumeSuffix = volume === '20ml' ? '-20' : '-50';
                     const productId = productData + volumeSuffix;
 
-                    app.cartManager.add(productId, quantity, rawVolume);
+                    app.cartManager.add(productId, quantity);
                 });
             }
 
@@ -615,22 +523,16 @@ document.addEventListener("DOMContentLoaded", () => {
             // Share button
             const shareBtn = page.querySelector('.share-btn');
             if (shareBtn) {
-                shareBtn.addEventListener('click', async () => {
+                shareBtn.addEventListener('click', () => {
                     if (navigator.share) {
-                        try {
-                            await navigator.share({ title: document.title, url: window.location.href });
-                        } catch (_) {}
+                        navigator.share({ title: document.title, url: window.location.href });
                     } else {
-                        this.copyTextToClipboard(window.location.href).then(() => {
+                        navigator.clipboard.writeText(window.location.href).then(() => {
                             this.showToast('Link copied to clipboard!');
-                        }).catch(() => {
-                            this.showToast('Unable to copy link. Please check browser permissions or copy from the address bar.', 'error');
                         });
                     }
                 });
             }
-
-            this.initProductPageRating(page);
         },
 
         initShopPage() {
@@ -641,20 +543,9 @@ document.addEventListener("DOMContentLoaded", () => {
         init() {
             this.cart = JSON.parse(localStorage.getItem('etremCart')) || [];
 
-            // Clean up stale/invalid cart items and normalize volume fallback
-            const validCart = this.cart
-                .filter(item => this.products.some(p => p.id === item.id))
-                .map(item => ({
-                    ...item,
-                    volume: this.normalizeVolume(item.id, item.volume)
-                }));
-            const cartChanged = validCart.length !== this.cart.length ||
-                validCart.some((item, idx) =>
-                    item.id !== this.cart[idx]?.id ||
-                    item.quantity !== this.cart[idx]?.quantity ||
-                    item.volume !== this.cart[idx]?.volume
-                );
-            if (cartChanged) {
+            // Clean up stale/invalid cart items that don't match any product
+            const validCart = this.cart.filter(item => this.products.some(p => p.id === item.id));
+            if (validCart.length !== this.cart.length) {
                 this.cart = validCart;
                 localStorage.setItem('etremCart', JSON.stringify(this.cart));
             }
@@ -672,7 +563,6 @@ document.addEventListener("DOMContentLoaded", () => {
             if (document.querySelector('.checkout-page')) this.checkout.initCheckoutPage();
             if (document.querySelector('.quiz-page')) this.quiz.init();
             if (document.querySelector('.profile-page')) this.profileManager.initProfilePage();
-            if (document.querySelector('.order-success-page')) this.orderSuccess.initOrderSuccessPage();
 
             this.cartManager.updateCartCount();
         },
@@ -687,8 +577,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     e.preventDefault();
                     e.stopPropagation();
                     const productId = btn.dataset.productId;
-                    const volume = btn.dataset.volume || '';
-                    this.cartManager.add(productId, 1, volume);
+                    this.cartManager.add(productId);
                 });
             });
 
@@ -954,7 +843,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 const isWishlisted = app.wishlist.includes(product.id);
                 const pageUrl = app.getProductPageUrl(product.id);
                 const shareUrl = `https://etremperfumes.com/${pageUrl}`;
-                const derivedVolume = app.deriveVolumeFromProductId(product.id);
                 return `
                     <div class="product-card" data-id="${product.id}">
                         <div class="product-card-image">
@@ -978,7 +866,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             </div>
                         </div>
                         <div class="product-card-actions" style="display:flex;gap:0.5rem;flex-direction:column;">
-                            <button class="btn btn-primary btn-block add-to-cart-btn" data-product-id="${product.id}" data-volume="${derivedVolume}">Add to Cart</button>
+                            <button class="btn btn-primary btn-block add-to-cart-btn" data-product-id="${product.id}">Add to Cart</button>
                             <div style="display:flex;gap:0.5rem;align-items:center;justify-content:space-between;">
                                 <!-- Rate this product -->
                                 <div class="stars-input" data-product-id="${product.id}" title="Rate this product">
@@ -1012,15 +900,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (db) {
                         db.ref(`ratings/${pid}`).once('value').then(snap => {
                             const data = snap.val();
-                            const ratingCount = Number(data?.ratingCount) || 0;
-                            const totalStars = Number(data?.totalStars) || 0;
-                            const average = ratingCount > 0 ? totalStars / ratingCount : 0;
-                            if (ratingCount > 0 && Number.isFinite(average)) {
-                                const avg = average.toFixed(1);
-                                const stars = '★'.repeat(Math.round(average)) + '☆'.repeat(5 - Math.round(average));
+                            if (data && data.ratingCount > 0) {
+                                const avg = (data.totalStars / data.ratingCount).toFixed(1);
+                                const stars = '★'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg));
                                 ratingEl.innerHTML = `
                                     <span class="stars-display">${stars}</span>
-                                    <span class="rating-count">★ ${avg} | ${ratingCount} rating${ratingCount > 1 ? 's' : ''}</span>
+                                    <span class="rating-count">★ ${avg} | ${data.ratingCount} rating${data.ratingCount > 1 ? 's' : ''}</span>
                                 `;
                             } else {
                                 ratingEl.innerHTML = `<span class="rating-count">No ratings yet</span>`;
@@ -1070,19 +955,14 @@ document.addEventListener("DOMContentLoaded", () => {
                                 if (displayEl) {
                                     ref.once('value').then(snap => {
                                         const d = snap.val();
-                                        const ratingCount = Number(d?.ratingCount) || 0;
-                                        const totalStars = Number(d?.totalStars) || 0;
-                                        const average = ratingCount > 0 ? totalStars / ratingCount : 0;
-                                        if (ratingCount > 0 && Number.isFinite(average)) {
-                                            const avg = average.toFixed(1);
-                                            const starsStr = '★'.repeat(Math.round(average)) + '☆'.repeat(5 - Math.round(average));
-                                            displayEl.innerHTML = `<span class="stars-display">${starsStr}</span><span class="rating-count">★ ${avg} | ${ratingCount} rating${ratingCount > 1 ? 's' : ''}</span>`;
+                                        if (d && d.ratingCount > 0) {
+                                            const avg = (d.totalStars / d.ratingCount).toFixed(1);
+                                            const starsStr = '★'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg));
+                                            displayEl.innerHTML = `<span class="stars-display">${starsStr}</span><span class="rating-count">★ ${avg} | ${d.ratingCount} ratings</span>`;
                                         }
                                     });
                                 }
-                            }).catch(() => {
-                                app.showToast('Could not submit rating right now.', 'error');
-                            });
+                            }).catch(err => console.error('Rating error:', err));
                         });
                     });
                 });
@@ -1100,7 +980,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             } catch (_) {}
                         } else {
                             try {
-                                await app.copyTextToClipboard(url);
+                                await navigator.clipboard.writeText(url);
                                 // Show tooltip
                                 const tip = document.createElement('span');
                                 tip.className = 'share-tooltip';
@@ -1108,7 +988,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 btn.parentElement.appendChild(tip);
                                 setTimeout(() => tip.remove(), 2100);
                             } catch (_) {
-                                app.showToast('Unable to copy link. Please check browser permissions or copy from the address bar.', 'error');
+                                app.showToast('Could not copy link.', 'error');
                             }
                         }
                     });
@@ -1215,20 +1095,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 this.renderCartPage();
             },
 
-            add(productId, quantity = 1, volume = '') {
+            add(productId, quantity = 1) {
                 const product = app.products.find(p => p.id === productId);
                 if (!product) {
-                    app.showToast('The selected product is currently unavailable. Please browse other fragrances or contact support.', "error");
+                    console.warn("Product not found:", productId);
                     return;
                 }
-                const normalizedVolume = app.normalizeVolume(productId, volume);
 
                 const existingItem = app.cart.find(item => item.id === productId);
                 if (existingItem) {
                     existingItem.quantity += quantity;
-                    existingItem.volume = app.normalizeVolume(productId, existingItem.volume);
                 } else {
-                    app.cart.push({ id: productId, quantity, volume: normalizedVolume });
+                    app.cart.push({ id: productId, quantity });
                 }
                 this.save();
                 app.showToast(`${product.name} added to cart!`);
@@ -1388,20 +1266,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (selectedCity === 'Surat') {
                         newShipping = 0;
                         if (otherCityGroup) otherCityGroup.style.display = 'none';
-                        if (cityInput) {
-                            cityInput.required = false;
-                            cityInput.value = '';
-                        }
+                        if (cityInput) cityInput.required = false;
                         if (shippingEl) {
                             shippingEl.textContent = 'FREE';
                             shippingEl.style.color = '#4CAF50';
                         }
                     } else if (selectedCity === 'other') {
-                        newShipping = this.SHIPPING_COST;
+                        newShipping = 60;
                         if (otherCityGroup) otherCityGroup.style.display = 'block';
                         if (cityInput) cityInput.required = true;
                         if (shippingEl) {
-                            shippingEl.textContent = `+ \u20b9${this.SHIPPING_COST}`;
+                            shippingEl.textContent = '+ \u20b960';
                             shippingEl.style.color = '';
                         }
                     } else {
@@ -1424,66 +1299,31 @@ document.addEventListener("DOMContentLoaded", () => {
                 const discountAmountEl = document.getElementById('checkout-discount');
 
                 if (couponBtn && couponInput) {
-                    couponBtn.addEventListener('click', async () => {
+                    couponBtn.addEventListener('click', () => {
                         const code = couponInput.value.trim().toUpperCase();
-                        if (!code) return;
-                        if (!/^[A-Z0-9_-]+$/.test(code)) {
-                            if (couponMsg) { couponMsg.textContent = '❌ Invalid coupon format.'; couponMsg.style.color = '#f44336'; }
-                            return;
-                        }
-
-                        couponBtn.textContent = 'Checking...';
-                        couponBtn.disabled = true;
-
-                        try {
-                            const res = await fetch(
-                                'https://etrem-a3c78-default-rtdb.asia-southeast1.firebasedatabase.app/coupons/' + code + '.json'
-                            );
-                            if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-                            const coupon = await res.json();
-
-                            if (!coupon || !coupon.enabled) {
-                                if (couponMsg) { couponMsg.textContent = '❌ Invalid or expired coupon code.'; couponMsg.style.color = '#f44336'; }
-                                couponBtn.textContent = 'Apply';
-                                couponBtn.disabled = false;
-                                return;
-                            }
-
-                            if (coupon.minOrder > 0 && subtotal < coupon.minOrder) {
-                                if (couponMsg) { couponMsg.textContent = `❌ Minimum order ₹${coupon.minOrder} required.`; couponMsg.style.color = '#f44336'; }
-                                couponBtn.textContent = 'Apply';
-                                couponBtn.disabled = false;
-                                return;
-                            }
-
-                            if (coupon.type === 'percent') {
-                                discount = Math.round(subtotal * (coupon.value / 100));
-                            } else {
-                                discount = Math.min(coupon.value, subtotal);
-                            }
-
-                            grandTotal = subtotal - discount + this._shipping;
+                        if (code === 'FNF25') {
+                            discount = Math.round(subtotal * 0.25);
+                            grandTotal = subtotal - discount + shipping;
                             this._discount = discount;
                             this._orderTotal = grandTotal;
-                            this._couponCode = code;
+                            this._couponCode = 'FNF25';
 
                             if (discountRow) discountRow.style.display = 'flex';
-                            if (discountAmountEl) discountAmountEl.textContent = `- ₹${discount}`;
-                            if (totalEl) totalEl.textContent = `₹${grandTotal}`;
+                            if (discountAmountEl) discountAmountEl.textContent = `- \u20b9${discount}`;
+                            if (totalEl) totalEl.textContent = `\u20b9${grandTotal}`;
                             if (couponMsg) {
-                                const label = coupon.type === 'percent' ? `${coupon.value}% off` : `₹${coupon.value} off`;
-                                couponMsg.textContent = `✅ Coupon applied! ${label}`;
+                                couponMsg.textContent = '\u2705 Coupon applied! 25% off.';
                                 couponMsg.style.color = '#4CAF50';
                             }
                             couponInput.disabled = true;
                             couponBtn.disabled = true;
-                            couponBtn.textContent = 'Applied ✓';
-                            app.showToast(`Coupon ${code} applied!`);
-
-                        } catch (err) {
-                            if (couponMsg) { couponMsg.textContent = '❌ Could not verify coupon. Try again.'; couponMsg.style.color = '#f44336'; }
-                            couponBtn.textContent = 'Apply';
-                            couponBtn.disabled = false;
+                            couponBtn.textContent = 'Applied';
+                            app.showToast('Coupon FNF25 applied! 25% discount.');
+                        } else {
+                            if (couponMsg) {
+                                couponMsg.textContent = '\u274c Invalid coupon code.';
+                                couponMsg.style.color = '#f44336';
+                            }
                         }
                     });
                 }
@@ -1609,7 +1449,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (paymentMethod === 'cod') {
                     // Cash on Delivery
-                    this._saveOrder(shippingDetails, 'COD', 'cod_' + Date.now());
+                    this._saveOrder(shippingDetails, 'COD', null);
                 } else {
                     // Razorpay Online Payment
                     if (typeof Razorpay === 'undefined') {
@@ -1658,7 +1498,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             },
 
-            async _saveOrder(shippingDetails, paymentMethod, paymentId) {
+            _generateOrderId() {
+                // Sequential order IDs: 000456, 000457, 000458 …
+                const START = 456;
+                const stored = parseInt(localStorage.getItem('etremLastOrderId') || (START - 1));
+                const next = stored + 1;
+                localStorage.setItem('etremLastOrderId', next);
+                return String(next).padStart(6, '0');
+            },
+
+            _saveOrder(shippingDetails, paymentMethod, paymentId) {
+                console.log("_saveOrder called, email will be sent");
+                const orderId = this._generateOrderId();
                 const orderData = {
                     items: app.cart.map(item => {
                         const product = app.products.find(p => p.id === item.id);
@@ -1667,9 +1518,10 @@ document.addEventListener("DOMContentLoaded", () => {
                             name: product ? product.name : item.id,
                             price: product ? product.price : 0,
                             quantity: item.quantity,
-                            volume: app.normalizeVolume(item.id, item.volume)
+                            volume: item.volume || ''
                         };
                     }),
+                    orderId: orderId,
                     subtotal: this._subtotal,
                     shipping: this._shipping,
                     discount: this._discount || 0,
@@ -1677,189 +1529,119 @@ document.addEventListener("DOMContentLoaded", () => {
                     total: this._orderTotal,
                     shippingDetails: shippingDetails,
                     paymentMethod: paymentMethod,
-                    paymentId: paymentId,
+                    paymentId: paymentId || ('cod-' + orderId),
                     status: paymentMethod === 'COD' ? 'confirmed' : 'paid',
                     createdAt: new Date().toISOString(),
                     userId: app.currentUser ? app.currentUser.uid : 'guest',
                     phone: shippingDetails.phone || ''
                 };
 
-                const orderLineData = app.buildOrderItemDetails(orderData.items);
-                const fallbackOrderLines = orderData.items.map(item => {
-                    const volume = item.volume || app.deriveVolumeFromProductId(item.id) || 'N/A';
-                    const quantity = Number(item.quantity) > 0 ? Number(item.quantity) : 1;
-                    const lineTotal = (Number(item.price) || 0) * quantity;
-                    return `${item.name || item.id} (${volume}) x${quantity} — ₹${lineTotal}`;
-                });
-                const productDetailsText = orderLineData.productDetails || fallbackOrderLines.join('\n');
-                const productDetailsHtml = orderLineData.productDetailsHtml || fallbackOrderLines.join('<br>');
-                const productSummary = orderLineData.productSummary || orderData.items.map(item => item.name).filter(Boolean).join(', ');
-                const totalQuantity = orderLineData.totalQuantity || orderData.items.reduce((sum, item) => sum + (Number(item.quantity) > 0 ? Number(item.quantity) : 1), 0);
-                const itemCount = orderLineData.itemCount || orderData.items.length;
-                const productName = orderLineData.productName || productSummary || 'Order items';
-                const productSize = orderLineData.productSize || orderLineData.sizeList || 'Mixed';
-                const generatedOrderId = `ETREM-${Date.now()}`;
-                let resolvedOrderId = generatedOrderId;
+                // Save to Firebase if available
                 if (db) {
-                    const orderRefPreview = db.ref('orders').push();
-                    resolvedOrderId = orderRefPreview.key || generatedOrderId;
-                }
-                orderData.orderId = resolvedOrderId;
+                    const orderRef = db.ref('orders/' + orderId);
 
-                const orderSuccessPayload = {
-                    orderId: resolvedOrderId,
-                    createdAt: orderData.createdAt,
-                    total: orderData.total,
-                    estimatedDelivery: '5-7 business days',
-                    items: orderData.items.map(item => ({
-                        name: item.name,
-                        quantity: item.quantity,
-                        volume: item.volume,
-                        lineTotal: item.price * item.quantity
-                    }))
-                };
+                    // 1. Save to global orders
+                    orderRef.set(orderData)
+                        .then(() => {
+                            console.log('Order saved:', orderId);
+                            
+                            // Send order confirmation emails after successful save
+                            console.log("EmailJS check:", typeof EMAILJS_SERVICE_ID, EMAILJS_SERVICE_ID, EMAILJS_PUBLIC_KEY);
+                            const SERVICE_ID = "service_r7f83sg";
+                            const ADMIN_TEMPLATE = "template_n4wrqtj";
+                            const CUSTOMER_TEMPLATE = "template_6oupid9"; // Customer order confirmation
+                            const PUB_KEY = "M2IU4HlY2wh4L6Fc0";
 
-                const orderId = resolvedOrderId;
-                const SERVICE_ID = "service_r7f83sg";
-                const ADMIN_TEMPLATE = "template_n4wrqtj";
-                const PUB_KEY = "M2IU4HlY2wh4L6Fc0";
+                            // Build per-item product lines (one per item for clarity)
+                            const firstItem = orderData.items[0] || {};
+                            const productLines = orderData.items.map(i =>
+                                `${i.name} (${i.volume || 'N/A'}) x${i.quantity} — ₹${i.price * i.quantity}`
+                            ).join('\n');
 
-                const emailParams = {
-                    order_id:        orderId,
-                    customer_name:   shippingDetails.name,
-                    customer_phone:  shippingDetails.phone,
-                    customer_email:  shippingDetails.email,
-                    name:            shippingDetails.name,
-                    to_name:         shippingDetails.name,
-                    phone:           shippingDetails.phone,
-                    email:           shippingDetails.email,
-                    to_email:        shippingDetails.email,
-                    product_name:    productName,
-                    product_size:    productSize,
-                    quantity:        totalQuantity,
-                    total_quantity:  totalQuantity,
-                    item_count:      itemCount,
-                    product_summary: productSummary,
-                    product_details: productDetailsText,
-                    product_details_html: productDetailsHtml,
-                    order_list:      productDetailsText,
-                    order_items:     productDetailsText,
-                    order_items_html: productDetailsHtml,
-                    total_amount:    this._orderTotal,
-                    order_total:     this._orderTotal,
-                    total:           this._orderTotal,
-                    shipping_charge: shippingDetails.shippingCharge || 0,
-                    city:            shippingDetails.city,
-                    address:         `${shippingDetails.address}, ${shippingDetails.city}, ${shippingDetails.state} - ${shippingDetails.pincode}`,
-                    payment_status:  paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online'
-                };
+                            const emailParams = {
+                                order_id:        orderId,
+                                customer_name:   shippingDetails.name,
+                                customer_phone:  shippingDetails.phone,
+                                customer_email:  shippingDetails.email,
+                                product_name:    firstItem.name || '',
+                                product_size:    firstItem.volume || '',
+                                quantity:        firstItem.quantity || 1,
+                                product_details: productLines,
+                                total_amount:    this._orderTotal,
+                                shipping_charge: shippingDetails.shippingCharge || 0,
+                                city:            shippingDetails.city,
+                                address:         `${shippingDetails.address}, ${shippingDetails.city}, ${shippingDetails.state} - ${shippingDetails.pincode}`,
+                                payment_status:  paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online'
+                            };
 
-                const sheetPayload = {
-                    order_id:        orderId,
-                    orderId:         orderId,
-                    timestamp:       orderData.createdAt,
-                    name:            shippingDetails.name,
-                    phone:           shippingDetails.phone,
-                    email:           shippingDetails.email,
-                    address:         shippingDetails.address,
-                    city:            shippingDetails.city,
-                    state:           shippingDetails.state,
-                    pincode:         shippingDetails.pincode,
-                    product_name:    productName,
-                    product_size:    productSize,
-                    quantity:        totalQuantity,
-                    total_quantity:  totalQuantity,
-                    item_count:      itemCount,
-                    product_summary: productSummary,
-                    product_details: productDetailsText,
-                    product_details_html: productDetailsHtml,
-                    order_list:      productDetailsText,
-                    order_items:     productDetailsText,
-                    items_json:      JSON.stringify(orderData.items),
-                    subtotal:        orderData.subtotal,
-                    shipping_charge: shippingDetails.shippingCharge || 0,
-                    discount:        orderData.discount || 0,
-                    total_amount:    orderData.total,
-                    total:           orderData.total,
-                    payment_method:  paymentMethod,
-                    payment_status:  paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online',
-                    coupon_code:     orderData.couponCode || ''
-                };
+                            // CALL 1 - Admin Request
+                            fetch('https://api.emailjs.com/api/v1.0/email/send', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    service_id: SERVICE_ID,
+                                    template_id: ADMIN_TEMPLATE,
+                                    user_id: PUB_KEY,
+                                    template_params: emailParams
+                                })
+                            }).then(res => {
+                                if(res.ok) console.log('Admin order notification sent successfully');
+                                else console.error('Admin email sending failed', res.status);
+                            }).catch(err => console.error('EmailJS admin request failed:', err));
 
-                if (db) {
-                    try {
-                        const orderRef = db.ref(`orders/${resolvedOrderId}`);
-                        await orderRef.set(orderData);
-                    } catch (_) {
-                        app.showToast('Could not save your order. Please contact support.', 'error');
-                        return;
-                    }
+                            // Note: Customer order confirmation is handled via
+                            // tracking-panel.html when owner ships the order.
 
-                    const phone = (shippingDetails.phone || '').replace(/[^0-9]/g, '');
-                    if (phone) {
-                        db.ref(`orders-by-phone/${phone}/${orderId}`).set(orderData).catch(() => {});
-                    }
-                    if (app.currentUser) {
-                        db.ref(`users/${app.currentUser.uid}/orders/${orderId}`).set(orderData).catch(() => {});
-                    }
-                }
-
-                const syncTasks = [];
-                syncTasks.push(
-                    fetch('https://api.emailjs.com/api/v1.0/email/send', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            service_id: SERVICE_ID,
-                            template_id: ADMIN_TEMPLATE,
-                            user_id: PUB_KEY,
-                            template_params: emailParams
-                        })
-                    }).then(res => {
-                        if (!res.ok) {
-                            app.showToast(`Order confirmed, but notification email failed. Please save order ID: ${orderId}`, 'error');
-                        }
-                    }).catch(() => {
-                        app.showToast(`Order confirmed, but notification email failed. Please save order ID: ${orderId}`, 'error');
-                    })
-                );
-
-                syncTasks.push(
-                    fetch('https://api.emailjs.com/api/v1.0/email/send', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            service_id: SERVICE_ID,
-                            template_id: 'template_6oupid9',
-                            user_id: PUB_KEY,
-                            template_params: {
-                                to_email:      shippingDetails.email,
-                                to_name:       shippingDetails.name,
-                                email_subject: 'Your ETREM Order is Confirmed! 🎉',
-                                message_body:  `Thank you for your order, ${shippingDetails.name}!\n\nOrder ID: ${orderId}\n\nItems Ordered:\n${productDetailsText}\n\nTotal Amount: ₹${orderData.total}\nShipping: ₹${shippingDetails.shippingCharge || 0}\nPayment Method: ${paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online'}\n\nShipping Address:\n${shippingDetails.address}, ${shippingDetails.city}, ${shippingDetails.state} - ${shippingDetails.pincode}\n\nEstimated Delivery: 5-7 business days\n\nWe will send you a tracking update once your order ships.\n\nThank you for choosing ETREM – The Naked Perfume!`
+                            // --- GOOGLE SHEETS SYNC ---
+                            if (GOOGLE_SHEETS_URL && GOOGLE_SHEETS_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+                                const firstItem = orderData.items[0] || {};
+                                fetch(GOOGLE_SHEETS_URL, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        order_id:        orderId,
+                                        timestamp:       orderData.createdAt,
+                                        name:            shippingDetails.name,
+                                        phone:           shippingDetails.phone,
+                                        email:           shippingDetails.email,
+                                        address:         shippingDetails.address,
+                                        city:            shippingDetails.city,
+                                        state:           shippingDetails.state,
+                                        pincode:         shippingDetails.pincode,
+                                        product_name:    firstItem.name || '',
+                                        product_size:    firstItem.volume || '',
+                                        quantity:        firstItem.quantity || 1,
+                                        product_details: orderData.items.map(i => `${i.name} (${i.volume||'N/A'}) x${i.quantity}`).join('; '),
+                                        subtotal:        orderData.subtotal,
+                                        shipping_charge: shippingDetails.shippingCharge || 0,
+                                        discount:        orderData.discount || 0,
+                                        total_amount:    orderData.total,
+                                        payment_method:  paymentMethod,
+                                        payment_status:  paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online',
+                                        coupon_code:     orderData.couponCode || ''
+                                    })
+                                }).then(res => {
+                                    if(res.ok) console.log('Order synced to Google Sheets ✅');
+                                    else console.error('Google Sheets sync failed', res.status);
+                                }).catch(err => console.error('Google Sheets sync error:', err));
                             }
                         })
-                    }).catch(() => {})
-                );
+                        .catch(err => console.error('Order save failed:', err));
 
-                if (GOOGLE_SHEETS_URL) {
-                    syncTasks.push(
-                        fetch(GOOGLE_SHEETS_URL, {
-                            method: 'POST',
-                            redirect: 'follow',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded'
-                            },
-                            body: new URLSearchParams(sheetPayload)
-                        }).catch((error) => {
-                            console.error('Google Sheets sync failed.', error);
-                        })
-                    );
+                    // 2. Save by phone number (for guest order tracking)
+                    const phone = (shippingDetails.phone || '').replace(/[^0-9]/g, '');
+                    if (phone) {
+                        db.ref(`orders-by-phone/${phone}/${orderId}`).set(orderData)
+                            .then(() => console.log('Phone-linked order saved:', phone))
+                            .catch(err => console.error('Phone order save failed:', err));
+                    }
+
+                    // 3. Save to user's orders if logged in
+                    if (app.currentUser) {
+                        db.ref(`users/${app.currentUser.uid}/orders/${orderId}`).set(orderData)
+                            .catch(err => console.error('User order save failed:', err));
+                    }
                 }
-
-                await Promise.allSettled(syncTasks);
-
-                sessionStorage.setItem('etremLastOrder', JSON.stringify(orderSuccessPayload));
 
                 // Clear cart
                 app.cart = [];
@@ -1873,7 +1655,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // Redirect to order confirmation / home
                 setTimeout(() => {
-                    window.location.href = './order-success.html';
+                    window.location.href = './index.html';
                 }, 2500);
             }
         },
@@ -2004,43 +1786,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     this.answers = {};
                     this.renderQuestion(container);
                 });
-            }
-        },
-
-        orderSuccess: {
-            initOrderSuccessPage() {
-                const orderDataRaw = sessionStorage.getItem('etremLastOrder');
-                const orderIdEl = document.getElementById('success-order-id');
-                const itemsEl = document.getElementById('success-order-items');
-                const totalEl = document.getElementById('success-order-total');
-                const deliveryEl = document.getElementById('success-delivery-estimate');
-                if (!orderIdEl || !itemsEl || !totalEl || !deliveryEl) return;
-
-                if (!orderDataRaw) {
-                    orderIdEl.textContent = 'Not available';
-                    itemsEl.innerHTML = '<li>No order details available.</li>';
-                    totalEl.textContent = '₹0';
-                    deliveryEl.textContent = '5-7 business days';
-                    return;
-                }
-
-                try {
-                    const orderData = JSON.parse(orderDataRaw);
-                    orderIdEl.textContent = orderData.orderId || 'Not available';
-                    totalEl.textContent = `₹${orderData.total || 0}`;
-                    deliveryEl.textContent = orderData.estimatedDelivery || '5-7 business days';
-                    const items = Array.isArray(orderData.items) ? orderData.items : [];
-                    itemsEl.innerHTML = items.length
-                        ? items.map(item => `<li>${item.name} (${item.volume || 'N/A'}) × ${item.quantity} — ₹${item.lineTotal || 0}</li>`).join('')
-                        : '<li>No item details available.</li>';
-                    sessionStorage.removeItem('etremLastOrder');
-                } catch (_) {
-                    orderIdEl.textContent = 'Not available';
-                    itemsEl.innerHTML = '<li>Could not load order details.</li>';
-                    totalEl.textContent = '₹0';
-                    deliveryEl.textContent = '5-7 business days';
-                    app.showToast('Order details unavailable. Please check your email confirmation or contact support.', 'error');
-                }
             }
         },
 
