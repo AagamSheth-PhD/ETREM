@@ -1643,35 +1643,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // ── GOOGLE SHEETS SYNC (always fires, outside Firebase) ────
                 const fi = orderData.items[0] || {};
+                const sheetsPayload = JSON.stringify({
+                    order_id:        orderId,
+                    timestamp:       orderData.createdAt,
+                    name:            shippingDetails.name,
+                    phone:           shippingDetails.phone,
+                    email:           shippingDetails.email,
+                    address:         shippingDetails.address,
+                    city:            shippingDetails.city,
+                    state:           shippingDetails.state,
+                    pincode:         shippingDetails.pincode,
+                    product_name:    fi.name || '',
+                    product_size:    fi.volume || '',
+                    quantity:        fi.quantity || 1,
+                    product_details: orderData.items.map(i => `${i.name} (${i.volume||'N/A'}) x${i.quantity}`).join('; '),
+                    subtotal:        orderData.subtotal,
+                    shipping_charge: shippingDetails.shippingCharge || 0,
+                    discount:        orderData.discount || 0,
+                    total_amount:    orderData.total,
+                    payment_method:  paymentMethod,
+                    payment_status:  paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online',
+                    coupon_code:     orderData.couponCode || '',
+                    item_count:      orderData.items.length,
+                    product_summary: productSummary,
+                    total_qty:       totalQty
+                });
                 fetch(SHEETS_URL, {
                     method: 'POST',
+                    mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        'Order ID':        orderId,
-                        'Timestamp':       orderData.createdAt,
-                        'Name':            shippingDetails.name,
-                        'Phone':           shippingDetails.phone,
-                        'Email':           shippingDetails.email,
-                        'Address':         shippingDetails.address,
-                        'City':            shippingDetails.city,
-                        'State':           shippingDetails.state,
-                        'Pincode':         shippingDetails.pincode,
-                        'Product':         fi.name || '',
-                        'Size':            fi.volume || '',
-                        'Qty':             fi.quantity || 1,
-                        'Product Details': orderData.items.map(i => `${i.name} (${i.volume||'N/A'}) x${i.quantity}`).join('; '),
-                        'Subtotal':        orderData.subtotal,
-                        'Shipping':        shippingDetails.shippingCharge || 0,
-                        'Discount':        orderData.discount || 0,
-                        'Total':           orderData.total,
-                        'Payment Method':  paymentMethod,
-                        'Payment Status':  paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online',
-                        'Coupon':          orderData.couponCode || '',
-                        'Item Count':      orderData.items.length,
-                        'Product Summary': productSummary,
-                        'Total Qty':       totalQty
-                    })
-                }).then(r => r.ok ? console.log('Sheets sync ✅') : r.text().then(t => console.error('Sheets sync failed', r.status, t)))
+                    body: sheetsPayload
+                }).then(() => console.log('Sheets sync request sent ✅'))
                   .catch(e => console.error('Sheets sync error:', e));
 
                 // ── FIREBASE SAVE ──────────────────────────────────────────
