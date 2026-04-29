@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ETREM – Owner Tracking Panel</title>
+    <title>ETREM – Owner Panel</title>
     <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="./css/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,67 +12,41 @@
     <style>
         :root { --accent-gold: #d4a843; --bg-dark: #0d0d0d; --surface: rgba(255,255,255,0.05); --border: rgba(212,168,67,0.25); }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--bg-dark); color: #fff; font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        body { background: var(--bg-dark); color: #fff; font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; }
 
-        /* ---- Lock Screen ---- */
-        #lock-screen {
-            width: 100%;
-            max-width: 400px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 2.5rem;
-            text-align: center;
-        }
+        /* Lock Screen */
+        #lock-screen { width: 100%; max-width: 400px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 2.5rem; text-align: center; margin-top: 15vh; }
         #lock-screen h1 { font-family: 'Playfair Display', serif; color: var(--accent-gold); font-size: 1.8rem; margin-bottom: 0.5rem; }
         #lock-screen p { color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-bottom: 1.5rem; }
         .lock-icon { font-size: 2.5rem; margin-bottom: 1rem; }
 
-        /* ---- Panel ---- */
-        #panel { display: none; width: 100%; max-width: 600px; padding: 2rem; }
+        /* Panel */
+        #panel { display: none; width: 100%; max-width: 640px; }
         .panel-header { text-align: center; margin-bottom: 2rem; }
         .panel-header h1 { font-family: 'Playfair Display', serif; color: var(--accent-gold); font-size: 2rem; }
         .panel-header p { color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-top: 0.3rem; }
 
-        .panel-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 2rem;
-        }
+        .panel-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; margin-bottom: 2rem; }
+        .panel-card h2 { font-family: 'Playfair Display', serif; color: var(--accent-gold); font-size: 1.3rem; margin-bottom: 1.25rem; }
 
         .form-group { margin-bottom: 1.25rem; }
         .form-group label { display: block; font-size: 0.8rem; font-weight: 600; letter-spacing: 1px; color: var(--accent-gold); margin-bottom: 0.4rem; text-transform: uppercase; }
         .form-group input, .form-group select {
-            width: 100%;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 6px;
-            color: #fff;
-            font-family: inherit;
-            font-size: 0.95rem;
-            padding: 0.75rem 1rem;
-            transition: border-color 0.2s;
+            width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px; color: #fff; font-family: inherit; font-size: 0.95rem; padding: 0.75rem 1rem; transition: border-color 0.2s;
         }
         .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent-gold); }
         .form-group input::placeholder { color: rgba(255,255,255,0.3); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 
         .btn-panel {
-            width: 100%;
-            padding: 0.9rem;
-            background: var(--accent-gold);
-            color: #000;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: opacity 0.2s;
-            margin-top: 0.5rem;
+            width: 100%; padding: 0.9rem; background: var(--accent-gold); color: #000; border: none; border-radius: 6px;
+            font-size: 0.9rem; font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: opacity 0.2s; margin-top: 0.5rem;
         }
         .btn-panel:hover { opacity: 0.9; }
         .btn-panel:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-danger { background: #f44336; color: #fff; padding: 0.4rem 0.75rem; border: none; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
+        .btn-danger:hover { opacity: 0.8; }
 
         .status-msg { text-align: center; margin-top: 1rem; font-size: 0.85rem; min-height: 1.2rem; }
         .status-msg.success { color: #4CAF50; }
@@ -80,8 +54,22 @@
 
         .lock-error { color: #f44336; font-size: 0.8rem; margin-top: 0.5rem; display: none; }
         .divider { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 1.5rem 0; }
-        .logout-btn { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); border-radius: 4px; padding: 0.4rem 0.8rem; font-size: 0.75rem; cursor: pointer; margin-top: 1rem; float: right; }
+        .logout-btn { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); border-radius: 4px; padding: 0.4rem 0.8rem; font-size: 0.75rem; cursor: pointer; }
         .logout-btn:hover { border-color: #f44336; color: #f44336; }
+
+        /* Coupon list */
+        .coupon-list { margin-top: 1.5rem; }
+        .coupon-item {
+            display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+            padding: 1rem 1.25rem; margin-bottom: 0.75rem; flex-wrap: wrap;
+        }
+        .coupon-item .ci-code { color: var(--accent-gold); font-weight: 700; font-size: 1.05rem; letter-spacing: 1px; }
+        .coupon-item .ci-detail { color: rgba(255,255,255,0.6); font-size: 0.82rem; }
+        .coupon-item .ci-detail strong { color: #fff; }
+        .coupon-item.expired { opacity: 0.45; }
+        .no-coupons { color: rgba(255,255,255,0.35); font-size: 0.85rem; text-align: center; padding: 1rem; }
+        @media (max-width: 576px) { .form-row { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -90,7 +78,7 @@
     <div id="lock-screen">
         <div class="lock-icon">🔐</div>
         <h1>ETREM</h1>
-        <p>Owner Tracking Panel — Private Access</p>
+        <p>Owner Panel — Private Access</p>
         <div class="form-group">
             <label for="pw-input">Password</label>
             <input type="password" id="pw-input" placeholder="Enter panel password" autocomplete="current-password">
@@ -102,11 +90,13 @@
     <!-- MAIN PANEL -->
     <div id="panel">
         <div class="panel-header">
-            <h1>📦 Tracking Panel</h1>
-            <p>Send a branded tracking email to a customer</p>
+            <h1>🛠️ Owner Panel</h1>
+            <p>Manage tracking emails & coupon codes</p>
         </div>
 
+        <!-- ═══════ TRACKING EMAIL SECTION ═══════ -->
         <div class="panel-card">
+            <h2>📦 Send Tracking Email</h2>
             <form id="tracking-form">
                 <div class="form-group">
                     <label for="t-customer-email">Customer Email *</label>
@@ -136,53 +126,101 @@
                     <label for="t-tracking-link">Tracking Link *</label>
                     <input type="url" id="t-tracking-link" placeholder="https://www.delhivery.com/track/..." required>
                 </div>
-                <div class="form-group">
-                    <label for="t-shipped-datetime">Shipped Date & Time *</label>
-                    <input type="datetime-local" id="t-shipped-datetime" required>
-                </div>
-                <div class="form-group">
-                    <label for="t-estimated-delivery">Estimated Delivery Date</label>
-                    <input type="date" id="t-estimated-delivery">
-                </div>
-
-                <hr class="divider">
-
                 <button type="submit" class="btn-panel" id="send-tracking-btn">📧 Send Tracking Email</button>
                 <p class="status-msg" id="tracking-status"></p>
             </form>
         </div>
 
-        <div style="text-align:right;">
+        <!-- ═══════ COUPON MANAGEMENT SECTION ═══════ -->
+        <div class="panel-card">
+            <h2>🏷️ Coupon Manager</h2>
+            <form id="coupon-form">
+                <div class="form-group">
+                    <label for="c-code">Coupon Code *</label>
+                    <input type="text" id="c-code" placeholder="e.g. SUMMER30" required style="text-transform: uppercase;">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="c-type">Discount Type *</label>
+                        <select id="c-type">
+                            <option value="percent">Percentage (%)</option>
+                            <option value="fixed">Fixed Amount (₹)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="c-value">Value *</label>
+                        <input type="number" id="c-value" placeholder="e.g. 25" min="1" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="c-from">Valid From *</label>
+                        <input type="datetime-local" id="c-from" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="c-until">Valid Until *</label>
+                        <input type="datetime-local" id="c-until" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn-panel" id="create-coupon-btn">✨ Create Coupon</button>
+                <p class="status-msg" id="coupon-status"></p>
+            </form>
+
+            <hr class="divider">
+
+            <h2 style="margin-bottom: 0.75rem;">Active Coupons</h2>
+            <div id="coupon-list" class="coupon-list">
+                <p class="no-coupons">Loading…</p>
+            </div>
+        </div>
+
+        <div style="text-align:right; margin-top: 0.5rem;">
             <button class="logout-btn" id="logout-btn">🔒 Lock Panel</button>
         </div>
     </div>
 
     <div id="toast-container"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
     <script>
         // ---- CONFIG ----
-        const PANEL_PASSWORD = "etrem2024owner"; // Change this password!
+        const PANEL_PASSWORD      = "etrem2024owner";
         const EMAILJS_SERVICE_ID  = "service_r7f83sg";
         const EMAILJS_PUBLIC_KEY  = "M2IU4HlY2wh4L6Fc0";
-        const TRACKING_TEMPLATE   = "template_6oupid9"; // Customer template — for tracking emails
+        const TRACKING_TEMPLATE   = "template_6oupid9";
+
+        // Firebase (same config as main.js)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCJ1LfS2K-J2YSkasG37PcfGvRzXu5EKYQ",
+            authDomain: "etrem-perfumes.firebaseapp.com",
+            databaseURL: "https://etrem-perfumes-default-rtdb.firebaseio.com",
+            projectId: "etrem-perfumes",
+            storageBucket: "etrem-perfumes.appspot.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
         // ---- LOCK / UNLOCK ----
         const lockScreen = document.getElementById('lock-screen');
         const panel      = document.getElementById('panel');
         const lockError  = document.getElementById('lock-error');
 
-        // Auto-unlock if session is active
         if (sessionStorage.getItem('etrem_panel_unlocked')) {
             lockScreen.style.display = 'none';
             panel.style.display = 'block';
+            loadCoupons();
         }
 
         document.getElementById('unlock-btn').addEventListener('click', () => {
-            const pw = document.getElementById('pw-input').value;
-            if (pw === PANEL_PASSWORD) {
+            if (document.getElementById('pw-input').value === PANEL_PASSWORD) {
                 sessionStorage.setItem('etrem_panel_unlocked', '1');
                 lockScreen.style.display = 'none';
                 panel.style.display = 'block';
                 lockError.style.display = 'none';
+                loadCoupons();
             } else {
                 lockError.style.display = 'block';
                 document.getElementById('pw-input').value = '';
@@ -200,7 +238,9 @@
             panel.style.display = 'none';
         });
 
-        // ---- SEND TRACKING EMAIL ----
+        // ════════════════════════════════════════════════
+        // TRACKING EMAIL
+        // ════════════════════════════════════════════════
         document.getElementById('tracking-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn    = document.getElementById('send-tracking-btn');
@@ -210,19 +250,11 @@
             status.textContent = '';
             status.className = 'status-msg';
 
-            const customerEmail     = document.getElementById('t-customer-email').value.trim();
-            const customerName      = document.getElementById('t-customer-name').value.trim();
-            const orderId           = document.getElementById('t-order-id').value.trim();
-            const courierPartner    = document.getElementById('t-courier').value;
-            const trackingLink      = document.getElementById('t-tracking-link').value.trim();
-
-            // Shipped date/time
-            const shippedRaw        = document.getElementById('t-shipped-datetime').value;
-            const shippedDate       = shippedRaw ? new Date(shippedRaw).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'Just now';
-
-            // Estimated delivery
-            const estRaw            = document.getElementById('t-estimated-delivery').value;
-            const estimatedDelivery = estRaw ? new Date(estRaw + 'T00:00:00').toLocaleDateString('en-IN', { dateStyle: 'long' }) : 'Within 5–7 business days';
+            const customerEmail  = document.getElementById('t-customer-email').value.trim();
+            const customerName   = document.getElementById('t-customer-name').value.trim();
+            const orderId        = document.getElementById('t-order-id').value.trim();
+            const courierPartner = document.getElementById('t-courier').value;
+            const trackingLink   = document.getElementById('t-tracking-link').value.trim();
 
             try {
                 const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
@@ -233,23 +265,22 @@
                         template_id: TRACKING_TEMPLATE,
                         user_id:     EMAILJS_PUBLIC_KEY,
                         template_params: {
-                            email_subject: `Your ETREM Order #${orderId} is on its way! 📦`,
-                            to_name:       customerName,
-                            to_email:      customerEmail,
+                            to_name:  customerName,
+                            to_email: customerEmail,
                             message_body:
 `Hi ${customerName},
 
 Great news! Your ETREM order has been shipped. 🚀
 
 Order ID: #${orderId}
-Shipped On: ${shippedDate}
 Courier Partner: ${courierPartner}
-Estimated Delivery: ${estimatedDelivery}
 
 Track your shipment here:
 ${trackingLink}
 
-If you have any questions, feel free to reach out:
+Estimated delivery: 5–7 business days.
+
+If you have any questions:
 📧 etrem.perfumes@gmail.com
 📞 +91 7069122218
 
@@ -264,13 +295,12 @@ Team ETREM`
                 if (res.ok) {
                     status.textContent = `✅ Tracking email sent to ${customerEmail}`;
                     status.className = 'status-msg success';
-                    console.log('Tracking email sent:', orderId);
                     document.getElementById('tracking-form').reset();
                 } else {
                     throw new Error('Response: ' + res.status);
                 }
             } catch (err) {
-                status.textContent = '❌ Failed to send. Check console for details.';
+                status.textContent = '❌ Failed to send. Check console.';
                 status.className = 'status-msg error';
                 console.error('Tracking email error:', err);
             } finally {
@@ -278,6 +308,112 @@ Team ETREM`
                 btn.textContent = '📧 Send Tracking Email';
             }
         });
+
+        // ════════════════════════════════════════════════
+        // COUPON MANAGER
+        // ════════════════════════════════════════════════
+
+        // CREATE COUPON
+        document.getElementById('coupon-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn    = document.getElementById('create-coupon-btn');
+            const status = document.getElementById('coupon-status');
+            btn.disabled = true;
+            btn.textContent = 'Creating...';
+            status.textContent = '';
+
+            const code      = document.getElementById('c-code').value.trim().toUpperCase();
+            const type      = document.getElementById('c-type').value;
+            const value     = parseInt(document.getElementById('c-value').value);
+            const validFrom = document.getElementById('c-from').value;
+            const validUntil= document.getElementById('c-until').value;
+
+            if (!code || !value || !validFrom || !validUntil) {
+                status.textContent = '❌ All fields are required.';
+                status.className = 'status-msg error';
+                btn.disabled = false; btn.textContent = '✨ Create Coupon';
+                return;
+            }
+
+            if (new Date(validUntil) <= new Date(validFrom)) {
+                status.textContent = '❌ "Valid Until" must be after "Valid From".';
+                status.className = 'status-msg error';
+                btn.disabled = false; btn.textContent = '✨ Create Coupon';
+                return;
+            }
+
+            try {
+                await db.ref('coupons/' + code).set({
+                    code:       code,
+                    type:       type,
+                    value:      value,
+                    validFrom:  new Date(validFrom).toISOString(),
+                    validUntil: new Date(validUntil).toISOString(),
+                    active:     true,
+                    createdAt:  new Date().toISOString()
+                });
+
+                const label = type === 'percent' ? `${value}%` : `₹${value}`;
+                status.textContent = `✅ Coupon "${code}" created — ${label} off`;
+                status.className = 'status-msg success';
+                document.getElementById('coupon-form').reset();
+                loadCoupons();
+            } catch (err) {
+                status.textContent = '❌ Failed to create coupon.';
+                status.className = 'status-msg error';
+                console.error('Create coupon error:', err);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '✨ Create Coupon';
+            }
+        });
+
+        // LOAD & DISPLAY COUPONS
+        function loadCoupons() {
+            const container = document.getElementById('coupon-list');
+            db.ref('coupons').orderByChild('createdAt').once('value', (snap) => {
+                const coupons = snap.val();
+                if (!coupons) {
+                    container.innerHTML = '<p class="no-coupons">No coupons created yet.</p>';
+                    return;
+                }
+
+                const now = new Date();
+                const items = Object.values(coupons).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                container.innerHTML = items.map(c => {
+                    const label = c.type === 'percent' ? `${c.value}% off` : `₹${c.value} off`;
+                    const from  = new Date(c.validFrom).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+                    const until = new Date(c.validUntil).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+                    const isExpired = now > new Date(c.validUntil);
+                    const isInactive = !c.active;
+                    const badge = isExpired ? '⏰ Expired' : isInactive ? '⏸️ Inactive' : '🟢 Active';
+
+                    return `
+                        <div class="coupon-item ${isExpired || isInactive ? 'expired' : ''}">
+                            <div>
+                                <div class="ci-code">${c.code}</div>
+                                <div class="ci-detail"><strong>${label}</strong> · ${badge}</div>
+                                <div class="ci-detail">${from} → ${until}</div>
+                            </div>
+                            <button class="btn-danger" onclick="deleteCoupon('${c.code}')">Delete</button>
+                        </div>
+                    `;
+                }).join('');
+            });
+        }
+
+        // DELETE COUPON
+        async function deleteCoupon(code) {
+            if (!confirm(`Delete coupon "${code}"?`)) return;
+            try {
+                await db.ref('coupons/' + code).remove();
+                loadCoupons();
+            } catch (err) {
+                console.error('Delete coupon error:', err);
+                alert('Failed to delete coupon.');
+            }
+        }
     </script>
 </body>
 </html>
