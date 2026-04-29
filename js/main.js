@@ -159,7 +159,6 @@ document.addEventListener("DOMContentLoaded", () => {
                             <li><a href="./contact.html" class="nav-link">Contact</a></li>
                         </ul>
                         <div class="nav-actions">
-                            <a href="./profile.html" style="color: var(--accent-gold); font-size: 0.8rem; font-weight: 700; text-decoration: none; letter-spacing: 0.5px; white-space: nowrap;">TRACK ORDER</a>
                             <button class="nav-action-btn" id="search-icon" aria-label="Search">
                                 <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
                             </button>
@@ -1537,111 +1536,82 @@ document.addEventListener("DOMContentLoaded", () => {
                     phone: shippingDetails.phone || ''
                 };
 
+                // --- EMAIL PARAMS (built once, used for both admin + customer) ---
+                const SERVICE_ID = "service_r7f83sg";
+                const ADMIN_TEMPLATE = "template_n4wrqtj";
+                const CUSTOMER_TEMPLATE = "template_6oupid9";
+                const PUB_KEY = "M2IU4HlY2wh4L6Fc0";
+
+                const firstItem = orderData.items[0] || {};
+                const productLines = orderData.items.map(i =>
+                    `${i.name} (${i.volume || 'N/A'}) x${i.quantity} — \u20b9${i.price * i.quantity}`
+                ).join('\n');
+
+                const emailParams = {
+                    order_id:        orderId,
+                    customer_name:   shippingDetails.name,
+                    customer_phone:  shippingDetails.phone,
+                    customer_email:  shippingDetails.email,
+                    to_email:        shippingDetails.email,
+                    product_name:    firstItem.name || '',
+                    product_size:    firstItem.volume || '',
+                    quantity:        firstItem.quantity || 1,
+                    product_details: productLines,
+                    total_amount:    this._orderTotal,
+                    shipping_charge: shippingDetails.shippingCharge || 0,
+                    city:            shippingDetails.city,
+                    address:         `${shippingDetails.address}, ${shippingDetails.city}, ${shippingDetails.state} - ${shippingDetails.pincode}`,
+                    payment_status:  paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online'
+                };
+
+                const sendEmail = (templateId) => fetch('https://api.emailjs.com/api/v1.0/email/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ service_id: SERVICE_ID, template_id: templateId, user_id: PUB_KEY, template_params: emailParams })
+                });
+
+                // CALL 1 – Admin notification
+                sendEmail(ADMIN_TEMPLATE)
+                    .then(r => r.ok ? console.log('Admin email sent ✅') : console.error('Admin email failed', r.status))
+                    .catch(e => console.error('Admin email error:', e));
+
+                // CALL 2 – Customer confirmation (immediate)
+                sendEmail(CUSTOMER_TEMPLATE)
+                    .then(r => r.ok ? console.log('Customer email sent ✅') : console.error('Customer email failed', r.status))
+                    .catch(e => console.error('Customer email error:', e));
+
                 // Save to Firebase if available
                 if (db) {
                     const orderRef = db.ref('orders/' + orderId);
-
-                    // 1. Save to global orders
                     orderRef.set(orderData)
                         .then(() => {
-                            console.log('Order saved:', orderId);
-                            
-                            // Send order confirmation emails after successful save
-                            console.log("EmailJS check:", typeof EMAILJS_SERVICE_ID, EMAILJS_SERVICE_ID, EMAILJS_PUBLIC_KEY);
-                            const SERVICE_ID = "service_r7f83sg";
-                            const ADMIN_TEMPLATE = "template_n4wrqtj";
-                            const CUSTOMER_TEMPLATE = "template_6oupid9"; // Customer order confirmation
-                            const PUB_KEY = "M2IU4HlY2wh4L6Fc0";
-
-                            // Build per-item product lines (one per item for clarity)
-                            const firstItem = orderData.items[0] || {};
-                            const productLines = orderData.items.map(i =>
-                                `${i.name} (${i.volume || 'N/A'}) x${i.quantity} — ₹${i.price * i.quantity}`
-                            ).join('\n');
-
-                            const emailParams = {
-                                order_id:        orderId,
-                                customer_name:   shippingDetails.name,
-                                customer_phone:  shippingDetails.phone,
-                                customer_email:  shippingDetails.email,
-                                product_name:    firstItem.name || '',
-                                product_size:    firstItem.volume || '',
-                                quantity:        firstItem.quantity || 1,
-                                product_details: productLines,
-                                total_amount:    this._orderTotal,
-                                shipping_charge: shippingDetails.shippingCharge || 0,
-                                city:            shippingDetails.city,
-                                address:         `${shippingDetails.address}, ${shippingDetails.city}, ${shippingDetails.state} - ${shippingDetails.pincode}`,
-                                payment_status:  paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online'
-                            };
-
-                            // CALL 1 - Admin Request
-                            fetch('https://api.emailjs.com/api/v1.0/email/send', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    service_id: SERVICE_ID,
-                                    template_id: ADMIN_TEMPLATE,
-                                    user_id: PUB_KEY,
-                                    template_params: emailParams
-                                })
-                            }).then(res => {
-                                if(res.ok) console.log('Admin order notification sent successfully');
-                                else console.error('Admin email sending failed', res.status);
-                            }).catch(err => console.error('EmailJS admin request failed:', err));
-
-                            // Note: Customer order confirmation is handled via
-                            // tracking-panel.html when owner ships the order.
-
-                            // --- GOOGLE SHEETS SYNC ---
+                            console.log('Order saved to Firebase:', orderId);
+                            // Google Sheets Sync
                             if (GOOGLE_SHEETS_URL && GOOGLE_SHEETS_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
-                                const firstItem = orderData.items[0] || {};
+                                const fi = orderData.items[0] || {};
                                 fetch(GOOGLE_SHEETS_URL, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({
-                                        order_id:        orderId,
-                                        timestamp:       orderData.createdAt,
-                                        name:            shippingDetails.name,
-                                        phone:           shippingDetails.phone,
-                                        email:           shippingDetails.email,
-                                        address:         shippingDetails.address,
-                                        city:            shippingDetails.city,
-                                        state:           shippingDetails.state,
-                                        pincode:         shippingDetails.pincode,
-                                        product_name:    firstItem.name || '',
-                                        product_size:    firstItem.volume || '',
-                                        quantity:        firstItem.quantity || 1,
+                                        order_id: orderId, timestamp: orderData.createdAt,
+                                        name: shippingDetails.name, phone: shippingDetails.phone, email: shippingDetails.email,
+                                        address: shippingDetails.address, city: shippingDetails.city, state: shippingDetails.state, pincode: shippingDetails.pincode,
+                                        product_name: fi.name || '', product_size: fi.volume || '', quantity: fi.quantity || 1,
                                         product_details: orderData.items.map(i => `${i.name} (${i.volume||'N/A'}) x${i.quantity}`).join('; '),
-                                        subtotal:        orderData.subtotal,
-                                        shipping_charge: shippingDetails.shippingCharge || 0,
-                                        discount:        orderData.discount || 0,
-                                        total_amount:    orderData.total,
-                                        payment_method:  paymentMethod,
-                                        payment_status:  paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online',
-                                        coupon_code:     orderData.couponCode || ''
+                                        subtotal: orderData.subtotal, shipping_charge: shippingDetails.shippingCharge || 0,
+                                        discount: orderData.discount || 0, total_amount: orderData.total,
+                                        payment_method: paymentMethod, payment_status: paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online',
+                                        coupon_code: orderData.couponCode || ''
                                     })
-                                }).then(res => {
-                                    if(res.ok) console.log('Order synced to Google Sheets ✅');
-                                    else console.error('Google Sheets sync failed', res.status);
-                                }).catch(err => console.error('Google Sheets sync error:', err));
+                                }).then(r => r.ok ? console.log('Sheets sync ✅') : console.error('Sheets sync failed', r.status))
+                                  .catch(e => console.error('Sheets sync error:', e));
                             }
                         })
-                        .catch(err => console.error('Order save failed:', err));
+                        .catch(e => console.error('Firebase save error:', e));
 
-                    // 2. Save by phone number (for guest order tracking)
                     const phone = (shippingDetails.phone || '').replace(/[^0-9]/g, '');
-                    if (phone) {
-                        db.ref(`orders-by-phone/${phone}/${orderId}`).set(orderData)
-                            .then(() => console.log('Phone-linked order saved:', phone))
-                            .catch(err => console.error('Phone order save failed:', err));
-                    }
-
-                    // 3. Save to user's orders if logged in
-                    if (app.currentUser) {
-                        db.ref(`users/${app.currentUser.uid}/orders/${orderId}`).set(orderData)
-                            .catch(err => console.error('User order save failed:', err));
-                    }
+                    if (phone) db.ref(`orders-by-phone/${phone}/${orderId}`).set(orderData).catch(() => {});
+                    if (app.currentUser) db.ref(`users/${app.currentUser.uid}/orders/${orderId}`).set(orderData).catch(() => {});
                 }
 
                 // Clear cart
@@ -1649,15 +1619,43 @@ document.addEventListener("DOMContentLoaded", () => {
                 app.cartManager.save();
                 app.cartManager.updateCartCount();
 
-                // Show success
+                // --- SUCCESS MODAL POPUP ---
                 const method = paymentMethod === 'COD' ? 'Cash on Delivery' : 'Online Payment';
-                app.showToast(`Order placed successfully via ${method}! 🎉`);
-
-
-                // Redirect to order confirmation / home
-                setTimeout(() => {
-                    window.location.href = './index.html';
-                }, 2500);
+                const modal = document.createElement('div');
+                modal.id = 'order-success-modal';
+                modal.style.cssText = `
+                    position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:99999;
+                    display:flex; align-items:center; justify-content:center; padding:1rem;
+                    animation: fadeInModal 0.4s ease;
+                `;
+                modal.innerHTML = `
+                    <style>
+                        @keyframes fadeInModal { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
+                        #order-success-modal .modal-box { background:#111; border:1px solid #C9A84C; border-radius:16px; padding:2.5rem 2rem; max-width:420px; width:100%; text-align:center; font-family:'Inter',sans-serif; }
+                        #order-success-modal .check-icon { font-size:3.5rem; margin-bottom:0.75rem; }
+                        #order-success-modal h2 { color:#C9A84C; font-family:'Playfair Display',serif; font-size:1.8rem; margin-bottom:0.5rem; }
+                        #order-success-modal p { color:#aaa; font-size:0.95rem; margin:0.4rem 0; line-height:1.6; }
+                        #order-success-modal .order-id-box { background:rgba(201,168,76,0.1); border:1px dashed rgba(201,168,76,0.4); border-radius:8px; padding:0.75rem 1rem; margin:1.25rem 0; }
+                        #order-success-modal .order-id-box strong { color:#C9A84C; font-size:1.4rem; letter-spacing:3px; }
+                        #order-success-modal .order-id-box small { display:block; color:#888; font-size:0.75rem; margin-bottom:0.25rem; }
+                        #order-success-modal .modal-btn { display:inline-block; margin-top:1.25rem; background:#C9A84C; color:#000; padding:0.75rem 2rem; border-radius:6px; font-weight:700; font-size:0.9rem; text-transform:uppercase; letter-spacing:1px; border:none; cursor:pointer; transition:background 0.3s; }
+                        #order-success-modal .modal-btn:hover { background:#b8922e; }
+                    </style>
+                    <div class="modal-box">
+                        <div class="check-icon">✅</div>
+                        <h2>Order Confirmed!</h2>
+                        <p>Thank you, <strong style="color:#fff">${shippingDetails.name}</strong>!</p>
+                        <p>Your order has been placed successfully via <strong style="color:#fff">${method}</strong>.</p>
+                        <div class="order-id-box">
+                            <small>Your Order ID</small>
+                            <strong>#${orderId}</strong>
+                        </div>
+                        <p>A confirmation email has been sent to <strong style="color:#fff">${shippingDetails.email}</strong>.</p>
+                        <p style="font-size:0.82rem; color:#666; margin-top:0.5rem;">Delivery within 5–7 business days.</p>
+                        <button class="modal-btn" onclick="window.location.href='./index.html'">Continue Shopping</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
             }
         },
 
