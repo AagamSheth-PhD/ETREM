@@ -43,12 +43,12 @@ document.addEventListener("DOMContentLoaded", () => {
             // Individuals 50ml
             { id: 'the-poem-50', name: 'The Poem', price: 399, mrp: 599, images: ['1.webp', '2.webp', '3.webp'], category: 'individual-50ml', gender: 'Feminine', family: ['Aromatic', 'Oriental'], bestFor: 'Romantic nights, festive occasions', notes: 'Lavender, Cardamom, Tobacco, Vanilla, Musk, Amber', bestSeller: true },
             { id: 'the-expanse-50', name: 'The Expanse', price: 399, mrp: 599, images: ['4.webp', '5.webp', '6.webp'], category: 'individual-50ml', gender: 'Masculine', family: ['Aquatic', 'Fresh'], bestFor: 'Summer days, holidays, casual wear', notes: 'Sea Notes, Grapefruit, Ambergris, Oakmoss', bestSeller: true },
-            { id: 'the-forge-50', name: 'The Forge', price: 399, mrp: 599, images: ['7.webp', '8.webp', '9.webp'], category: 'individual-50ml', gender: 'Masculine', family: ['Aromatic', 'Woody'], bestFor: 'Evenings, date nights, formal gatherings', notes: 'Grapefruit, Tobacco, Amber, Cedar' },
-            { id: 'the-muse-50', name: 'The Muse', price: 399, mrp: 599, images: ['10.webp', '11.webp', '12.webp'], category: 'individual-50ml', gender: 'Feminine', family: ['Floral', 'Aquatic'], bestFor: 'Office to casual evenings', notes: 'Floral, Aquatic, Fruity, Citrus, Ozonic' },
+            { id: 'the-forge-50', name: 'The Forge', price: 399, mrp: 599, images: ['7.webp', '8.webp', '9.webp'], category: 'individual-50ml', gender: 'Masculine', family: ['Aromatic', 'Woody'], bestFor: 'Evenings, date nights, formal gatherings', notes: 'Grapefruit, Tobacco, Amber, Cedar', bestSeller: true },
+            { id: 'the-muse-50', name: 'The Muse', price: 399, mrp: 599, images: ['10.webp', '11.webp', '12.webp'], category: 'individual-50ml', gender: 'Feminine', family: ['Floral', 'Aquatic'], bestFor: 'Office to casual evenings', notes: 'Floral, Aquatic, Fruity, Citrus, Ozonic', bestSeller: true },
             { id: 'the-affair-50', name: 'The Affair', price: 399, mrp: 599, images: ['13.webp', '14.webp', '15.webp'], category: 'individual-50ml', gender: 'Feminine', family: ['Gourmand', 'Oriental'], bestFor: 'Evenings, parties, intimate moments', notes: 'Almond, Coffee, Cacao Vanilla, Sandalwood', bestSeller: true },
             { id: 'the-warden-50', name: 'The Warden', price: 399, mrp: 599, images: ['16.webp', '17.webp', '18.webp'], category: 'individual-50ml', gender: 'Masculine', family: ['Woody', 'Aromatic'], bestFor: 'Professionals, formal events, daily wear', notes: 'Bergamot, Lavender, Patchouli, Vetiver', bestSeller: true },
-            { id: 'the-genesis-50', name: 'The Genesis', price: 399, mrp: 599, images: ['19.webp', '20.webp', '21.webp'], category: 'individual-50ml', gender: 'Unisex', family: ['Fruity', 'Gourmand'], bestFor: 'Daily wear, versatile day-to-night', notes: 'Ripe Fruits, Creamy Vanilla, Musk' },
-            { id: 'the-murk-50', name: 'The Murk', price: 399, mrp: 599, images: ['22.webp', '23.webp', '24.webp'], category: 'individual-50ml', gender: 'Unisex', family: ['Gourmand', 'Oriental'], bestFor: 'Intimate evenings, all seasons', notes: 'Cinnamon, Pear, Jasmine, Coffee, Bourbon Vanilla' },
+            { id: 'the-genesis-50', name: 'The Genesis', price: 399, mrp: 599, images: ['19.webp', '20.webp', '21.webp'], category: 'individual-50ml', gender: 'Unisex', family: ['Fruity', 'Gourmand'], bestFor: 'Daily wear, versatile day-to-night', notes: 'Ripe Fruits, Creamy Vanilla, Musk', bestSeller: true },
+            { id: 'the-murk-50', name: 'The Murk', price: 399, mrp: 599, images: ['22.webp', '23.webp', '24.webp'], category: 'individual-50ml', gender: 'Unisex', family: ['Gourmand', 'Oriental'], bestFor: 'Intimate evenings, all seasons', notes: 'Cinnamon, Pear, Jasmine, Coffee, Bourbon Vanilla', bestSeller: true },
             { id: 'the-reign-50', name: 'The Reign', price: 399, mrp: 599, images: ['25.webp', '26.webp', '27.webp'], category: 'individual-50ml', gender: 'Unisex', family: ['Aquatic', 'Woody'], bestFor: 'Day-to-night, versatile and sophisticated', notes: 'Sea Water, Herbal Mint, Sandalwood, Musk' },
 
             // Individuals 20ml
@@ -369,14 +369,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 startAutoSlide();
             }
 
-            // ---- Featured / Best Seller Products ----
+            // ---- Featured / Best Seller Products (show 8) ----
             const featuredGrid = document.getElementById('featured-products');
             if (featuredGrid) {
-                const bestSellers = this.products.filter(p => p.bestSeller);
+                const bestSellers = this.products.filter(p => p.bestSeller).slice(0, 8);
                 featuredGrid.innerHTML = bestSellers.map(p => this.shop.createProductCardHTML(p)).join('');
 
                 // Add event listeners for the rendered cards
                 this._attachProductCardListeners(featuredGrid);
+                this.shop.initRatingsAndShare(featuredGrid);
             }
         },
 
