@@ -1585,8 +1585,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     phone: shippingDetails.phone || ''
                 };
 
-                // ── NEW GOOGLE_SHEETS_URL ──────────────────────────────────
-                const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxOJT3g88QQ8MxrMcOuwChic5ZyDyCs0ZBWx-gsQml2RXwdHDZWtI5GJtPj-aMa7aTN/exec';
+                // ── GOOGLE SHEETS URL (defined at top of file as GOOGLE_SHEETS_URL) ──
 
                 // ── BUILD SHARED DATA ──────────────────────────────────────
                 const SERVICE_ID = 'service_r7f83sg';
@@ -1680,12 +1679,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     product_summary: productSummary,
                     total_qty:       totalQty
                 });
-                const formData = new FormData();
-                formData.append('data', sheetsPayload);
                 fetch(GOOGLE_SHEETS_URL, {
                     method: 'POST',
                     mode: 'no-cors',
-                    body: formData
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'data=' + encodeURIComponent(sheetsPayload)
                 }).then(() => console.log('Sheets sync request sent ✅'))
                   .catch(e => console.error('Sheets sync error:', e));
 
